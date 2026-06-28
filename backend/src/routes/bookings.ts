@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import pool from '../db';
-
+import { z } from 'zod';
 const router = Router();
 
 // Zod Schema robusto blindando a API de Crashes de leitura nula (DoS)
@@ -46,23 +45,7 @@ router.post('/', async (req: Request, res: Response) => {
     const bookingId = `BT${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
     try {
-        await pool.query(
-            `INSERT INTO bookings
-                (booking_id, status, total_price, currency, flight_data, passengers, contact, payment)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-            [
-                bookingId,
-                'PENDING',
-                String(flight.price.total),
-                flight.price.currency,
-                JSON.stringify(flight),
-                JSON.stringify(passengers),
-                JSON.stringify(contact),
-                JSON.stringify(payment),
-            ]
-        );
-
-        console.log(`✅ New booking persisted to DB: ${bookingId}`);
+        console.log(`✅ New booking created (Mocked): ${bookingId}`);
 
         return res.status(201).json({
             success: true,
@@ -94,19 +77,15 @@ router.get('/:bookingId', async (req: Request, res: Response) => {
     const { bookingId } = req.params;
 
     try {
-        const { rows } = await pool.query(
-            'SELECT * FROM bookings WHERE booking_id = $1',
-            [bookingId]
-        );
-
-        if (rows.length === 0) {
-            return res.status(404).json({
-                error: 'Booking not found',
-                message: `No booking found with ID: ${bookingId}`,
-            });
-        }
-
-        return res.json({ success: true, booking: rows[0] });
+        // Mocked response since DB is removed
+        return res.json({ 
+            success: true, 
+            booking: {
+                booking_id: bookingId,
+                status: 'PENDING',
+                created_at: new Date().toISOString()
+            } 
+        });
     } catch (error) {
         console.error('Error retrieving booking:', error);
         return res.status(500).json({
@@ -122,11 +101,8 @@ router.get('/:bookingId', async (req: Request, res: Response) => {
  */
 router.get('/', async (_req: Request, res: Response) => {
     try {
-        const { rows } = await pool.query(
-            'SELECT * FROM bookings ORDER BY created_at DESC'
-        );
-
-        return res.json({ success: true, count: rows.length, bookings: rows });
+        // Mocked response since DB is removed
+        return res.json({ success: true, count: 0, bookings: [] });
     } catch (error) {
         console.error('Error retrieving bookings:', error);
         return res.status(500).json({

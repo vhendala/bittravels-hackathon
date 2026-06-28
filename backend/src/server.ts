@@ -70,7 +70,7 @@ app.use('/api/flights', requireApiKey, flightsRouter);
 app.use('/api/bookings', requireApiKey, bookingsRouter);
 app.use('/api/locations', requireApiKey, locationsRouter);
 
-// Webhook Externo do SaaS de milhas (não usa a API Key do frontend do cliente)
+// Webhook para recebimento de reservas do frontend
 app.use('/api/receive-reservation', reservationWebhookRouter);
 
 // Health check mínimo — não expõe nome da aplicação nem versão

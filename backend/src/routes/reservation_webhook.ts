@@ -4,15 +4,11 @@
  *
  * A lógica de negócio está distribuída nos serviços abaixo:
  *  - reservationSanitizer  → sanitização e validação de campos
- *  - reservationRepository → persistência no PostgreSQL
- *  - reservationNotifier   → notificações (Telegram, SaaS)
  */
+
 import express, { Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { sanitizeCustomer, getMissingFields } from '../services/reservationSanitizer';
-import { saveReservation } from '../services/reservationRepository';
-import { notifyTelegram, forwardToSaas } from '../services/reservationNotifier';
-
 const router = express.Router();
 
 // Limitador rígido para criações de reserva
@@ -39,17 +35,6 @@ router.post('/', reservationLimiter, async (req: Request, res: Response): Promis
         return;
     }
 
-    // 3. Persistência no banco de dados (bloqueante — tratado com try/catch interno)
-    try {
-        await saveReservation(internal_id, customer, payment, flight);
-    } catch (dbError) {
-        // Non-fatal: loga mas não interrompe o fluxo (Telegram e SaaS ainda disparam)
-        console.error('❌ Falha ao salvar a reserva no banco de dados:', dbError);
-    }
-
-    // 4. Notificações externas (fire-and-forget — não bloqueante)
-    notifyTelegram(internal_id, customer, flight, payment);
-    forwardToSaas(req.body, customer);
 
     res.status(200).json({ success: true, message: 'Reservation received successfully' });
 });
