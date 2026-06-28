@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import { FlightProvider } from '@/contexts/FlightContext'
+import PrivyProviders from '@/components/PrivyProviders'
 
 export const metadata: Metadata = {
   title: 'Bit Travels - Viaje pagando com cripto',
@@ -18,7 +19,9 @@ export default function RootLayout({
       <body>
         <LanguageProvider>
           <FlightProvider>
-            {children}
+            <PrivyProviders>
+              {children}
+            </PrivyProviders>
           </FlightProvider>
         </LanguageProvider>
       </body>

@@ -1,5 +1,4 @@
 // Amadeus API Service
-import { notifyAmadeusCall } from './telegramMonitor';
 interface AmadeusTokenResponse {
     access_token: string;
     expires_in: number;
@@ -260,8 +259,6 @@ export async function searchFlights(params: {
         }
     };
 
-    notifyAmadeusCall('/shopping/flight-offers', `Busca de Voos: ${originDestinations.map(od => `${od.originLocationCode} ➡️ ${od.destinationLocationCode}`).join(' | ')}`);
-
     const response = await fetch(`${AMADEUS_BASE_URL}/shopping/flight-offers`, {
         method: 'POST',
         headers: {
@@ -307,8 +304,6 @@ const AMADEUS_V1_BASE_URL = 'https://test.api.amadeus.com/v1';
 export async function getBrandedFares(flightOffer: unknown): Promise<FlightOffer[]> {
     const token = await getAmadeusToken();
 
-    notifyAmadeusCall('/shopping/flight-offers/upselling', 'Consulta de Tarifas/Bagagens (Branded Fares)');
-
     const response = await fetch(`${AMADEUS_V1_BASE_URL}/shopping/flight-offers/upselling`, {
         method: 'POST',
         headers: {
@@ -351,8 +346,6 @@ export async function searchLocations(keyword: string): Promise<any[]> {
 
     const url = `https://test.api.amadeus.com/v1/reference-data/locations?${searchParams}`;
     console.log(`[Amadeus] Searching locations with keyword: "${keyword}"`);
-    notifyAmadeusCall('/reference-data/locations', `Pesquisa IATA/Cidade: ${keyword}`);
-
     const response = await fetch(url, {
         headers: {
             Authorization: `Bearer ${token}`,

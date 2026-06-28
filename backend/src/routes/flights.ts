@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { searchFlights } from '../services/amadeus';
 import rateLimit from 'express-rate-limit';
-import { notifyFlightSearch } from '../services/telegramMonitor';
+
 import crypto from 'crypto';
 
 const router = Router();
@@ -87,15 +87,7 @@ router.post('/search', searchLimiter, async (req: Request, res: Response) => {
             });
         }
 
-        // Notificação Telegram (Fire-and-forget) apenas se for bater na API real
-        const userIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0] || req.ip;
 
-        if (origin && destination && departureDate) {
-            notifyFlightSearch(origin as string, destination as string, departureDate as string, userIp);
-        } else if (segments && segments.length > 0) {
-            const first = segments[0];
-            notifyFlightSearch(first.origin, first.destination, first.departureDate, userIp);
-        }
 
         const flights = await searchFlights(searchConfig);
 
@@ -158,9 +150,7 @@ router.get('/search', searchLimiter, async (req: Request, res: Response) => {
             });
         }
 
-        // Notificação Telegram (Fire-and-forget)
-        const userIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0] || req.ip;
-        notifyFlightSearch(origin as string, destination as string, departureDate as string, userIp);
+
 
         const flights = await searchFlights(searchConfig);
         

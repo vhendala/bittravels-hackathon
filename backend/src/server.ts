@@ -11,7 +11,7 @@ import flightsRouter from './routes/flights';
 import bookingsRouter from './routes/bookings';
 import locationsRouter from './routes/locations';
 import reservationWebhookRouter from './routes/reservation_webhook';
-import { initTelegramCron } from './services/telegramMonitor';
+import fundingRouter from './routes/funding';
 import { requireApiKey } from './middleware/auth';
 
 const app: Application = express();
@@ -73,6 +73,9 @@ app.use('/api/locations', requireApiKey, locationsRouter);
 // Webhook para recebimento de reservas do frontend
 app.use('/api/receive-reservation', reservationWebhookRouter);
 
+// Endpoint de funding (orquestração via Friendbot)
+app.use('/api/funding', fundingRouter);
+
 // Health check mínimo — não expõe nome da aplicação nem versão
 app.get('/health', (_req: Request, res: Response) => {
     res.json({ status: 'ok' });
@@ -88,6 +91,4 @@ app.listen(PORT, () => {
     const env = IS_PRODUCTION ? 'production' : 'development';
     console.log(`🚀 Backend running on port ${PORT} [${env}]`);
     
-    // Inicializa o monitoramento do Telegram
-    initTelegramCron();
 });
