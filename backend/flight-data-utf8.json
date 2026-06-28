@@ -1,0 +1,245 @@
+﻿{
+    "success":  true,
+    "count":  1,
+    "data":  [
+                 {
+                     "type":  "flight-offer",
+                     "id":  "1",
+                     "source":  "GDS",
+                     "instantTicketingRequired":  false,
+                     "nonHomogeneous":  false,
+                     "oneWay":  false,
+                     "isUpsellOffer":  false,
+                     "lastTicketingDate":  "2026-03-15",
+                     "lastTicketingDateTime":  "2026-03-15",
+                     "numberOfBookableSeats":  9,
+                     "itineraries":  [
+                                         {
+                                             "duration":  "PT11H35M",
+                                             "segments":  [
+                                                              {
+                                                                  "departure":  {
+                                                                                    "iataCode":  "GRU",
+                                                                                    "terminal":  "2",
+                                                                                    "at":  "2026-04-15T07:20:00"
+                                                                                },
+                                                                  "arrival":  {
+                                                                                  "iataCode":  "BOG",
+                                                                                  "terminal":  "1",
+                                                                                  "at":  "2026-04-15T11:20:00"
+                                                                              },
+                                                                  "carrierCode":  "AV",
+                                                                  "number":  "86",
+                                                                  "aircraft":  {
+                                                                                   "code":  "788"
+                                                                               },
+                                                                  "operating":  {
+                                                                                    "carrierName":  "AVIANCA"
+                                                                                },
+                                                                  "duration":  "PT6H",
+                                                                  "id":  "1",
+                                                                  "numberOfStops":  0,
+                                                                  "blacklistedInEU":  false
+                                                              },
+                                                              {
+                                                                  "departure":  {
+                                                                                    "iataCode":  "BOG",
+                                                                                    "terminal":  "1",
+                                                                                    "at":  "2026-04-15T12:50:00"
+                                                                                },
+                                                                  "arrival":  {
+                                                                                  "iataCode":  "MIA",
+                                                                                  "at":  "2026-04-15T17:55:00"
+                                                                              },
+                                                                  "carrierCode":  "AV",
+                                                                  "number":  "4",
+                                                                  "aircraft":  {
+                                                                                   "code":  "320"
+                                                                               },
+                                                                  "operating":  {
+                                                                                    "carrierName":  "AVIANCA"
+                                                                                },
+                                                                  "duration":  "PT4H5M",
+                                                                  "id":  "2",
+                                                                  "numberOfStops":  0,
+                                                                  "blacklistedInEU":  false
+                                                              }
+                                                          ]
+                                         }
+                                     ],
+                     "price":  {
+                                   "currency":  "BRL",
+                                   "total":  "1696.61",
+                                   "base":  "1413.35",
+                                   "fees":  [
+                                                {
+                                                    "amount":  "0.00",
+                                                    "type":  "SUPPLIER"
+                                                },
+                                                {
+                                                    "amount":  "0.00",
+                                                    "type":  "TICKETING"
+                                                }
+                                            ],
+                                   "grandTotal":  "1696.61",
+                                   "additionalServices":  [
+                                                              {
+                                                                  "amount":  "420.32",
+                                                                  "type":  "CHECKED_BAGS"
+                                                              }
+                                                          ]
+                               },
+                     "pricingOptions":  {
+                                            "fareType":  [
+                                                             "PUBLISHED"
+                                                         ],
+                                            "includedCheckedBagsOnly":  false
+                                        },
+                     "validatingAirlineCodes":  [
+                                                    "AV"
+                                                ],
+                     "travelerPricings":  [
+                                              {
+                                                  "travelerId":  "1",
+                                                  "fareOption":  "STANDARD",
+                                                  "travelerType":  "ADULT",
+                                                  "price":  {
+                                                                "currency":  "BRL",
+                                                                "total":  "1696.61",
+                                                                "base":  "1413.35"
+                                                            },
+                                                  "fareDetailsBySegment":  [
+                                                                               {
+                                                                                   "segmentId":  "1",
+                                                                                   "cabin":  "ECONOMY",
+                                                                                   "fareBasis":  "SEOB1BR9",
+                                                                                   "brandedFare":  "LIGHT",
+                                                                                   "brandedFareLabel":  "LIGHT",
+                                                                                   "class":  "S",
+                                                                                   "includedCheckedBags":  {
+                                                                                                               "quantity":  0
+                                                                                                           },
+                                                                                   "includedCabinBags":  {
+                                                                                                             "quantity":  1
+                                                                                                         },
+                                                                                   "amenities":  [
+                                                                                                     {
+                                                                                                         "description":  "1ST CHECKED BAG 23KG 158 LCM",
+                                                                                                         "isChargeable":  true,
+                                                                                                         "amenityType":  "BAGGAGE",
+                                                                                                         "amenityProvider":  {
+                                                                                                                                 "name":  "BrandedFare"
+                                                                                                                             }
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "description":  "2ND CHECKED BAG 23KG 158 LCM",
+                                                                                                         "isChargeable":  true,
+                                                                                                         "amenityType":  "BAGGAGE",
+                                                                                                         "amenityProvider":  {
+                                                                                                                                 "name":  "BrandedFare"
+                                                                                                                             }
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "description":  "3RD CHECKED BAG 23KG 158 LCM",
+                                                                                                         "isChargeable":  true,
+                                                                                                         "amenityType":  "BAGGAGE",
+                                                                                                         "amenityProvider":  {
+                                                                                                                                 "name":  "BrandedFare"
+                                                                                                                             }
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "description":  "PRE RESERVED SEAT ASSIGNMENT",
+                                                                                                         "isChargeable":  true,
+                                                                                                         "amenityType":  "PRE_RESERVED_SEAT",
+                                                                                                         "amenityProvider":  {
+                                                                                                                                 "name":  "BrandedFare"
+                                                                                                                             }
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "description":  "AIRPORT CHECK IN COUNTER",
+                                                                                                         "isChargeable":  true,
+                                                                                                         "amenityType":  "TRAVEL_SERVICES",
+                                                                                                         "amenityProvider":  {
+                                                                                                                                 "name":  "BrandedFare"
+                                                                                                                             }
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "description":  "PRIORITY BOARDING",
+                                                                                                         "isChargeable":  true,
+                                                                                                         "amenityType":  "TRAVEL_SERVICES",
+                                                                                                         "amenityProvider":  {
+                                                                                                                                 "name":  "BrandedFare"
+                                                                                                                             }
+                                                                                                     }
+                                                                                                 ]
+                                                                               },
+                                                                               {
+                                                                                   "segmentId":  "2",
+                                                                                   "cabin":  "ECONOMY",
+                                                                                   "fareBasis":  "SEOB1BR9",
+                                                                                   "brandedFare":  "LIGHT",
+                                                                                   "brandedFareLabel":  "LIGHT",
+                                                                                   "class":  "S",
+                                                                                   "includedCheckedBags":  {
+                                                                                                               "quantity":  0
+                                                                                                           },
+                                                                                   "includedCabinBags":  {
+                                                                                                             "quantity":  1
+                                                                                                         },
+                                                                                   "amenities":  [
+                                                                                                     {
+                                                                                                         "description":  "1ST CHECKED BAG 23KG 158 LCM",
+                                                                                                         "isChargeable":  true,
+                                                                                                         "amenityType":  "BAGGAGE",
+                                                                                                         "amenityProvider":  {
+                                                                                                                                 "name":  "BrandedFare"
+                                                                                                                             }
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "description":  "2ND CHECKED BAG 23KG 158 LCM",
+                                                                                                         "isChargeable":  true,
+                                                                                                         "amenityType":  "BAGGAGE",
+                                                                                                         "amenityProvider":  {
+                                                                                                                                 "name":  "BrandedFare"
+                                                                                                                             }
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "description":  "3RD CHECKED BAG 23KG 158 LCM",
+                                                                                                         "isChargeable":  true,
+                                                                                                         "amenityType":  "BAGGAGE",
+                                                                                                         "amenityProvider":  {
+                                                                                                                                 "name":  "BrandedFare"
+                                                                                                                             }
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "description":  "PRE RESERVED SEAT ASSIGNMENT",
+                                                                                                         "isChargeable":  true,
+                                                                                                         "amenityType":  "PRE_RESERVED_SEAT",
+                                                                                                         "amenityProvider":  {
+                                                                                                                                 "name":  "BrandedFare"
+                                                                                                                             }
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "description":  "AIRPORT CHECK IN COUNTER",
+                                                                                                         "isChargeable":  true,
+                                                                                                         "amenityType":  "TRAVEL_SERVICES",
+                                                                                                         "amenityProvider":  {
+                                                                                                                                 "name":  "BrandedFare"
+                                                                                                                             }
+                                                                                                     },
+                                                                                                     {
+                                                                                                         "description":  "PRIORITY BOARDING",
+                                                                                                         "isChargeable":  true,
+                                                                                                         "amenityType":  "TRAVEL_SERVICES",
+                                                                                                         "amenityProvider":  {
+                                                                                                                                 "name":  "BrandedFare"
+                                                                                                                             }
+                                                                                                     }
+                                                                                                 ]
+                                                                               }
+                                                                           ]
+                                              }
+                                          ]
+                 }
+             ]
+}

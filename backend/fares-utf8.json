@@ -1,0 +1,264 @@
+{
+  "type": "flight-offer",
+  "id": "2",
+  "source": "GDS",
+  "instantTicketingRequired": false,
+  "paymentCardRequired": false,
+  "lastTicketingDate": "2026-03-09",
+  "itineraries": [
+    {
+      "segments": [
+        {
+          "departure": {
+            "iataCode": "GRU",
+            "terminal": "2",
+            "at": "2026-06-01T01:45:00"
+          },
+          "arrival": {
+            "iataCode": "BOG",
+            "at": "2026-06-01T05:45:00"
+          },
+          "carrierCode": "AV",
+          "number": "248",
+          "aircraft": {
+            "code": "32N"
+          },
+          "operating": {
+            "carrierCode": "AV"
+          },
+          "duration": "PT6H",
+          "id": "11",
+          "numberOfStops": 0,
+          "blacklistedInEU": false
+        },
+        {
+          "departure": {
+            "iataCode": "BOG",
+            "terminal": "1",
+            "at": "2026-06-01T07:00:00"
+          },
+          "arrival": {
+            "iataCode": "JFK",
+            "at": "2026-06-01T13:59:00"
+          },
+          "carrierCode": "AV",
+          "number": "210",
+          "aircraft": {
+            "code": "32N"
+          },
+          "operating": {
+            "carrierCode": "AV"
+          },
+          "duration": "PT5H59M",
+          "id": "12",
+          "numberOfStops": 0,
+          "blacklistedInEU": false
+        }
+      ]
+    }
+  ],
+  "price": {
+    "currency": "BRL",
+    "total": "3737.60",
+    "base": "3452.93",
+    "fees": [
+      {
+        "amount": "0.00",
+        "type": "TICKETING"
+      }
+    ],
+    "grandTotal": "3737.60"
+  },
+  "pricingOptions": {
+    "fareType": [
+      "PUBLISHED"
+    ],
+    "includedCheckedBagsOnly": false,
+    "refundableFare": false,
+    "noRestrictionFare": false,
+    "noPenaltyFare": false
+  },
+  "validatingAirlineCodes": [
+    "AV"
+  ],
+  "travelerPricings": [
+    {
+      "travelerId": "1",
+      "fareOption": "STANDARD",
+      "travelerType": "ADULT",
+      "price": {
+        "currency": "BRL",
+        "total": "3737.60",
+        "base": "3452.93",
+        "taxes": [
+          {
+            "amount": "64.56",
+            "code": "BR"
+          },
+          {
+            "amount": "37.01",
+            "code": "XY"
+          },
+          {
+            "amount": "20.30",
+            "code": "XA"
+          },
+          {
+            "amount": "39.07",
+            "code": "YC"
+          },
+          {
+            "amount": "123.73",
+            "code": "US"
+          }
+        ]
+      },
+      "fareDetailsBySegment": [
+        {
+          "segmentId": "11",
+          "cabin": "ECONOMY",
+          "fareBasis": "EEOB1BRS",
+          "brandedFare": "LIGHT",
+          "class": "E",
+          "includedCheckedBags": {
+            "quantity": 0
+          },
+          "amenities": [
+            {
+              "code": "04J",
+              "description": "LAPTOP OR HANDBAG UP TO 85LCM",
+              "isChargeable": false,
+              "amenityType": "BAGGAGE"
+            },
+            {
+              "code": "057",
+              "description": "MILEAGE ACCRUAL",
+              "isChargeable": false,
+              "amenityType": "BRANDED_FARES"
+            },
+            {
+              "code": "010",
+              "description": "CARRY ON BAGGAGE 10KG 115 LCM",
+              "isChargeable": false,
+              "amenityType": "BAGGAGE"
+            },
+            {
+              "code": "06I",
+              "description": "CHANGE BEFORE DEPARTURE",
+              "isChargeable": true,
+              "amenityType": "BRANDED_FARES"
+            },
+            {
+              "code": "0CC",
+              "description": "1ST CHECKED BAG 23KG 158 LCM",
+              "isChargeable": true,
+              "amenityType": "BAGGAGE"
+            },
+            {
+              "code": "0CD",
+              "description": "2ND CHECKED BAG 23KG 158 LCM",
+              "isChargeable": true,
+              "amenityType": "BAGGAGE"
+            },
+            {
+              "code": "0CE",
+              "description": "3RD CHECKED BAG 23KG 158 LCM",
+              "isChargeable": true,
+              "amenityType": "BAGGAGE"
+            },
+            {
+              "code": "0B5",
+              "description": "PRE RESERVED SEAT ASSIGNMENT",
+              "isChargeable": true,
+              "amenityType": "PRE_RESERVED_SEAT"
+            },
+            {
+              "code": "05Q",
+              "description": "AIRPORT CHECK IN COUNTER",
+              "isChargeable": true,
+              "amenityType": "TRAVEL_SERVICES"
+            },
+            {
+              "code": "0G6",
+              "description": "PRIORITY BOARDING",
+              "isChargeable": true,
+              "amenityType": "TRAVEL_SERVICES"
+            }
+          ]
+        },
+        {
+          "segmentId": "12",
+          "cabin": "ECONOMY",
+          "fareBasis": "EEOB1BRS",
+          "brandedFare": "LIGHT",
+          "class": "E",
+          "includedCheckedBags": {
+            "quantity": 0
+          },
+          "amenities": [
+            {
+              "code": "04J",
+              "description": "LAPTOP OR HANDBAG UP TO 85LCM",
+              "isChargeable": false,
+              "amenityType": "BAGGAGE"
+            },
+            {
+              "code": "057",
+              "description": "MILEAGE ACCRUAL",
+              "isChargeable": false,
+              "amenityType": "BRANDED_FARES"
+            },
+            {
+              "code": "010",
+              "description": "CARRY ON BAGGAGE 10KG 115 LCM",
+              "isChargeable": false,
+              "amenityType": "BAGGAGE"
+            },
+            {
+              "code": "06I",
+              "description": "CHANGE BEFORE DEPARTURE",
+              "isChargeable": true,
+              "amenityType": "BRANDED_FARES"
+            },
+            {
+              "code": "0CC",
+              "description": "1ST CHECKED BAG 23KG 158 LCM",
+              "isChargeable": true,
+              "amenityType": "BAGGAGE"
+            },
+            {
+              "code": "0CD",
+              "description": "2ND CHECKED BAG 23KG 158 LCM",
+              "isChargeable": true,
+              "amenityType": "BAGGAGE"
+            },
+            {
+              "code": "0CE",
+              "description": "3RD CHECKED BAG 23KG 158 LCM",
+              "isChargeable": true,
+              "amenityType": "BAGGAGE"
+            },
+            {
+              "code": "0B5",
+              "description": "PRE RESERVED SEAT ASSIGNMENT",
+              "isChargeable": true,
+              "amenityType": "PRE_RESERVED_SEAT"
+            },
+            {
+              "code": "05Q",
+              "description": "AIRPORT CHECK IN COUNTER",
+              "isChargeable": true,
+              "amenityType": "TRAVEL_SERVICES"
+            },
+            {
+              "code": "0G6",
+              "description": "PRIORITY BOARDING",
+              "isChargeable": true,
+              "amenityType": "TRAVEL_SERVICES"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
