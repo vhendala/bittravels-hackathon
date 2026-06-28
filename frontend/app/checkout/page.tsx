@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useFlightContext } from '@/contexts/FlightContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import PassengerForm, { PassengerData } from '@/components/PassengerForm';
-import { ArrowLeft, Plane, Check, AlertCircle, Info, Shield, Users, Mail, MessageCircle, CreditCard } from 'lucide-react';
+import { ArrowLeft, Plane, Check, AlertCircle, Info, Mail, MessageCircle, CreditCard, QrCode, Copy, Wallet, Lock, Loader2, X } from 'lucide-react';
 import Header from '@/components/Header';
+import { usePrivy } from '@privy-io/react-auth';
 
 const COUNTRIES = [
     { name: 'Brasil', code: '55', flag: '🇧🇷' },
@@ -35,6 +36,7 @@ const COUNTRIES = [
 export default function CheckoutPage() {
     const { t } = useLanguage();
     const router = useRouter();
+    const { ready, authenticated, login } = usePrivy();
     const { selectedFlight, searchParams, locationNames, resolveLocationNames } = useFlightContext();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
@@ -42,6 +44,25 @@ export default function CheckoutPage() {
     const [error, setError] = useState('');
     const [showTaxesPopover, setShowTaxesPopover] = useState(false);
     const [isTestMode, setIsTestMode] = useState(false);
+
+    // PIX Privy-gated payment flow
+    const [showPixScreen, setShowPixScreen] = useState(false);
+    const [pixTotal, setPixTotal] = useState(0);
+    const [toastVisible, setToastVisible] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [copied, setCopied] = useState(false);
+
+    const showToast = (message: string) => {
+        setToastMessage(message);
+        setToastVisible(true);
+        setTimeout(() => setToastVisible(false), 5000);
+    };
+
+    const handleCopyPixCode = () => {
+        navigator.clipboard.writeText('00020126580014br.gov.bcb.pix0136bittravels-pix-key-placeholder');
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
 
     // Passenger data
     const [adults, setAdults] = useState<PassengerData[]>([]);
@@ -303,6 +324,21 @@ export default function CheckoutPage() {
             return;
         }
 
+        // PIX flow: gate behind Privy authentication
+        if (paymentMethod === 'pix') {
+            if (!authenticated) {
+                // Not logged in → trigger Privy login modal
+                login();
+                return;
+            }
+            // Authenticated → show PIX QR Code screen
+            const pricing = calculatePricing();
+            setPixTotal(pricing.total);
+            setShowPixScreen(true);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+
         setIsSubmitting(true);
         setError('');
 
@@ -383,6 +419,135 @@ export default function CheckoutPage() {
         }
     };
 
+    // PIX Payment Screen
+    if (showPixScreen) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex flex-col">
+                <Header />
+
+                {/* In-App Toast */}
+                {toastVisible && (
+                    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-start gap-3 bg-[#0C2B54] text-white px-6 py-4 rounded-2xl shadow-2xl max-w-md w-[calc(100%-2rem)] animate-in slide-in-from-top-4 duration-300">
+                        <div className="p-1.5 bg-[#F5B316] rounded-full shrink-0 mt-0.5">
+                            <Check size={14} className="text-[#0C2B54]" />
+                        </div>
+                        <p className="text-sm font-medium leading-snug flex-1">{toastMessage}</p>
+                        <button onClick={() => setToastVisible(false)} className="text-white/60 hover:text-white shrink-0 mt-0.5">
+                            <X size={16} />
+                        </button>
+                    </div>
+                )}
+
+                <main className="flex-1 flex items-center justify-center p-4 pt-28">
+                    <div className="bg-white rounded-3xl shadow-xl w-full max-w-md border border-gray-100 overflow-hidden">
+
+                        {/* Header */}
+                        <div className="bg-[#0C2B54] px-8 pt-8 pb-6">
+                            <div className="flex items-center gap-3 mb-1">
+                                <div className="p-2.5 bg-[#F5B316] rounded-xl">
+                                    <QrCode size={20} className="text-[#0C2B54]" />
+                                </div>
+                                <h1 className="text-2xl font-bold text-white">Pagamento via PIX</h1>
+                            </div>
+                            <p className="text-white/60 text-sm pl-[52px]">Escaneie o QR Code com o app do seu banco</p>
+                        </div>
+
+                        <div className="px-8 py-6 space-y-6">
+
+                            {/* Total destacado */}
+                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                <div>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Valor total</p>
+                                    <p className="text-3xl font-bold text-[#0C2B54]">
+                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pixTotal)}
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-1.5 bg-green-100 text-green-700 px-3 py-1.5 rounded-full border border-green-200">
+                                    <Lock size={12} />
+                                    <span className="text-xs font-bold">5% OFF</span>
+                                </div>
+                            </div>
+
+                            {/* QR Code Estilizado */}
+                            <div className="flex flex-col items-center gap-4">
+                                <div className="p-5 bg-white rounded-2xl shadow-md border border-gray-100 relative">
+                                    {/* Grid pattern que simula um QR Code */}
+                                    <div className="w-48 h-48 relative">
+                                        <div className="absolute inset-0 grid grid-cols-7 gap-0.5 p-2 opacity-90">
+                                            {Array.from({ length: 49 }).map((_, i) => (
+                                                <div
+                                                    key={i}
+                                                    className={`rounded-sm ${
+                                                        // Posiciona o ícone central e cria padrão
+                                                        (i >= 21 && i <= 27) ? 'bg-transparent' :
+                                                        [0,1,2,3,4,5,6,7,13,14,20,21,27,28,34,35,41,42,43,44,45,46,47,48,
+                                                         8,15,11,18,32,39,36,29,23,25,30,37,16,24,3,10,17,38,45,31].includes(i)
+                                                        ? 'bg-[#0C2B54]' : 'bg-gray-100'
+                                                    }`}
+                                                />
+                                            ))}
+                                        </div>
+                                        {/* Ícone central sobre o grid */}
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <div className="bg-white p-2 rounded-xl shadow-sm">
+                                                <Wallet size={24} className="text-[#0C2B54]" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-400 text-center">QR Code válido por <span className="font-semibold text-gray-600">30 minutos</span></p>
+                            </div>
+
+                            {/* Chave Copia e Cola */}
+                            <div className="space-y-2">
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Chave Pix (Copia e Cola)</p>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        readOnly
+                                        value="00020126580014br.gov.bcb.pix0136bittravels-pix-key-placeholder"
+                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-500 text-[11px] font-mono pr-24 cursor-default focus:outline-none"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleCopyPixCode}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#0C2B54] hover:bg-[#0C2B54]/90 rounded-lg text-white transition-all flex items-center gap-1.5"
+                                    >
+                                        {copied ? <Check size={13} /> : <Copy size={13} />}
+                                        <span className="text-[10px] font-bold uppercase">{copied ? 'Copiado!' : 'Copiar'}</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Botão Já Paguei */}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    console.log('[BitTravels] PIX confirmed by user. Initiating Soroban lock...');
+                                    showToast('Pagamento processado com sucesso! Iniciando travamento na blockchain...');
+                                }}
+                                className="w-full py-4 bg-[#F5B316] hover:bg-[#F5B316]/90 text-[#0C2B54] font-bold text-base rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+                            >
+                                <Check size={20} />
+                                Já paguei
+                            </button>
+
+                            {/* Voltar */}
+                            <button
+                                type="button"
+                                onClick={() => setShowPixScreen(false)}
+                                className="w-full py-3 border-2 border-gray-200 hover:border-[#0C2B54]/20 text-gray-500 hover:text-[#0C2B54] font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+                            >
+                                <ArrowLeft size={16} />
+                                Voltar ao checkout
+                            </button>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
     if (isSuccess) {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -447,9 +612,9 @@ export default function CheckoutPage() {
                     {/* Main Content (Forms) */}
                     <div className="lg:col-span-2">
                         {error && (
-                            <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 flex items-start gap-3 mb-6">
-                                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                                <p className="text-red-200">{error}</p>
+                            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3 mb-6">
+                                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                                <p className="text-red-800 font-medium text-sm">{error}</p>
                             </div>
                         )}
 
