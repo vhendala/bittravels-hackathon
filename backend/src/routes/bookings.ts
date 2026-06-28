@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { z } from 'zod';
+import { releaseFundsToAgency } from '../services/soroban';
+
 const router = Router();
 
 // Zod Schema robusto blindando a API de Crashes de leitura nula (DoS)
@@ -68,6 +69,34 @@ router.post('/', async (req: Request, res: Response) => {
         });
     }
 });
+
+/**
+ * Confirm a booking and release escrow funds (Called by Admin/Worker after ticket issuance)
+ * POST /api/bookings/confirm/:bookingId
+ */
+router.post('/confirm/:bookingId', async (req: Request, res: Response) => {
+    const { bookingId } = req.params;
+
+    try {
+        console.log(`[Bookings] Confirming booking ${bookingId} and releasing funds...`);
+        
+        // Oracle will sign the release on Soroban
+        const txHash = await releaseFundsToAgency(bookingId);
+
+        return res.json({
+            success: true,
+            message: 'Booking confirmed and funds released to agency.',
+            txHash
+        });
+    } catch (error) {
+        console.error(`[Bookings] Failed to confirm booking ${bookingId}:`, error);
+        return res.status(500).json({
+            error: 'Failed to release funds on Soroban',
+            message: error instanceof Error ? error.message : 'Unknown error occurred',
+        });
+    }
+});
+
 
 /**
  * Get booking by ID

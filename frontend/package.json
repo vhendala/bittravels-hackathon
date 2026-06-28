@@ -10,6 +10,7 @@
     },
     "dependencies": {
         "@privy-io/react-auth": "^3.32.2",
+        "@stellar/stellar-sdk": "^16.0.1",
         "@stripe/crypto": "^1.1.0",
         "framer-motion": "^11.3.19",
         "lucide-react": "^0.427.0",

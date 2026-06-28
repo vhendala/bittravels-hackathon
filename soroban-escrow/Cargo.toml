@@ -1,0 +1,33 @@
+[package]
+name = "bittravels-escrow"
+version = "0.1.0"
+edition = "2021"
+description = "Bit Travels Soroban Escrow Contract — programmable settlement for the travel ecosystem"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# soroban-sdk 22.x is stable and targets Protocol 22 (Mainnet)
+soroban-sdk = "22.0.6"
+
+[dev-dependencies]
+soroban-sdk = { version = "22.0.6", features = ["testutils"] }
+
+# ── Release profile ────────────────────────────────────────────────────────────
+# Keep the WASM binary as small as possible while enabling overflow checks
+# so accidental integer wrapping panics rather than silently corrupts state.
+[profile.release]
+opt-level     = "z"
+overflow-checks = true
+debug           = 0
+strip           = "symbols"
+debug-assertions = false
+panic           = "abort"
+codegen-units   = 1
+lto             = true
+
+[profile.release-with-logs]
+inherits         = "release"
+debug-assertions = true
