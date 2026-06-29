@@ -190,7 +190,7 @@ const translations: Record<Language, Record<string, string>> = {
   pt: {
     'nav.contact': 'Fale Conosco',
     'hero.logo.travels': 'VIAGENS',
-    'hero.headline': 'Viaje pagando com cripto',
+    'hero.headline': 'Compre sua viagem com pagamento protegido',
     'hero.subheadline': 'Segurança e confiança, atendimento personalizado e a liberdade de pagar sua viagem com criptomoedas, cartão, boleto ou Pix. Viaje com quem entende do futuro.',
     'hero.cta': 'Receba um orçamento personalizado',
     'hero.badge.support': 'Suporte Personalizado',
@@ -266,7 +266,7 @@ const translations: Record<Language, Record<string, string>> = {
     'passengers.year': 'ano',
     'passengers.years': 'anos',
     'confirm': 'Confirmar',
-    'footer.description': 'Viaje pagando com cripto. Viaje com quem entende do futuro.',
+    'footer.description': 'Compre sua viagem com pagamento protegido. Viaje com quem entende do futuro.',
     'oneWay': 'Somente Ida',
     'roundTrip': 'Ida e Volta',
     'multiCity': 'Multidestino',

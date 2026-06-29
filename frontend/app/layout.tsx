@@ -5,7 +5,7 @@ import { FlightProvider } from '@/contexts/FlightContext'
 import PrivyProviders from '@/components/PrivyProviders'
 
 export const metadata: Metadata = {
-  title: 'Bit Travels - Viaje pagando com cripto',
+  title: 'Bit Travels - Compre sua viagem com pagamento protegido',
   description: 'Uma das primeiras agências do mundo a aceitar criptomoedas. Segurança jurídica, atendimento personalizado e a liberdade de pagar sua viagem com bitcoin, USDT, outras criptomoedas, cartão, boleto ou Pix.',
 }
 
