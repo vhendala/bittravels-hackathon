@@ -1,0 +1,14 @@
+C:\projects\bittravels-hackathon\soroban-escrow\target\release\deps\serde-bf04877cf9bee15d.d: C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\lib.rs C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\integer128.rs C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\mod.rs C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\de.rs C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\ser.rs C:\projects\bittravels-hackathon\soroban-escrow\target\release\build\serde-9fe3ec284cd5d524\out/private.rs
+
+C:\projects\bittravels-hackathon\soroban-escrow\target\release\deps\libserde-bf04877cf9bee15d.rlib: C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\lib.rs C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\integer128.rs C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\mod.rs C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\de.rs C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\ser.rs C:\projects\bittravels-hackathon\soroban-escrow\target\release\build\serde-9fe3ec284cd5d524\out/private.rs
+
+C:\projects\bittravels-hackathon\soroban-escrow\target\release\deps\libserde-bf04877cf9bee15d.rmeta: C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\lib.rs C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\integer128.rs C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\mod.rs C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\de.rs C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\ser.rs C:\projects\bittravels-hackathon\soroban-escrow\target\release\build\serde-9fe3ec284cd5d524\out/private.rs
+
+C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\lib.rs:
+C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\integer128.rs:
+C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\mod.rs:
+C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\de.rs:
+C:\Users\vhend\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\ser.rs:
+C:\projects\bittravels-hackathon\soroban-escrow\target\release\build\serde-9fe3ec284cd5d524\out/private.rs:
+
+# env-dep:OUT_DIR=C:\\projects\\bittravels-hackathon\\soroban-escrow\\target\\release\\build\\serde-9fe3ec284cd5d524\\out

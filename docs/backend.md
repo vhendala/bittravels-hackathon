@@ -368,13 +368,13 @@ To protect Amadeus API quota (which is rate-limited and metered), all flight sea
 | `NODE_ENV` | ❌ | `development` or `production` |
 | `BITTRAVELS_API_KEY` | ⚠️ Recommended | Shared secret for the API key guard middleware |
 | `PRIVY_APP_SECRET` | ⚠️ Recommended | Privy App Secret for server-side JWT verification |
-| `STELLAR_NETWORK` | ✅ | `testnet` or `public` |
-| `STELLAR_RPC_URL` | ✅ | Soroban RPC endpoint URL |
-| `SOROBAN_CONTRACT_ID` | ✅ | Escrow contract ID on the blockchain |
-| `ORACLE_SECRET_KEY` | ✅ | Backend private key used to sign `release_funds` |
-| `AGENCY_ADDRESS` | ✅ | The Stellar address of the travel agency receiving USDC |
+| `STELLAR_NETWORK` | ✅ | `testnet` ou `public` |
+| `STELLAR_RPC_URL` | ✅ | Soroban RPC endpoint URL (ex: `https://soroban-testnet.stellar.org`) |
+| `SOROBAN_CONTRACT_ID` | ✅ | Escrow contract ID na blockchain (ex: `CAA7ON...`) |
+| `ORACLE_SECRET_KEY` | ✅ | Chave privada do backend usada para assinar `release_funds` |
+| `AGENCY_ADDRESS` | ✅ | Endereço Stellar da agência de viagens recebendo o USDC |
 
-> `BITTRAVELS_API_KEY` should be set in all environments before going to production. Without it, all API routes are open to direct access.
+> **Nota sobre Soroban:** Os valores para o Contrato Soroban, Chave do Oráculo e Endereço da Agência foram gerados e populados durante o deploy na Testnet.
 
 ---
 

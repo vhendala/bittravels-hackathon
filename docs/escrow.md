@@ -90,6 +90,14 @@ A pasta `soroban-escrow/` contém:
 - **`src/lib.rs`**: O código completo do contrato inteligente, os tipos, os erros customizados (`EscrowError`) e 8 testes unitários que cobrem 100% dos caminhos felizes e todos os caminhos de erro esperados.
 - **`README.md`**: Instruções passo-a-passo para build (`stellar contract build`), deploy para a Testnet (`stellar contract deploy`) via CLI e documentação para interações manuais (`stellar contract invoke`).
 
+### Deploy na Testnet
+
+O contrato foi compilado (utilizando o toolchain GNU Rust para evitar dependências MSVC) e feito o deploy com sucesso na rede Stellar Testnet:
+- **Contract ID:** `CAA7ONVD3TNCRNBIOQXPJWGJIWCKWSNG5XX7FZEYA6R6V4CWP3G7XCYF`
+- **Wasm Hash:** `f5f20f5a4bfea19be66b48baecada7fea9b1988a66fb8413781bec53b6450cc9`
+
+O Oráculo e a conta da agência (para fins de teste) também foram gerados e configurados no backend.
+
 ---
 
 ## 6. Integração Frontend (Web3)
