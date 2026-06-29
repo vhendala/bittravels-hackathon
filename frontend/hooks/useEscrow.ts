@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import * as StellarSdk from '@stellar/stellar-sdk';
-import { usePrivy } from '@privy-io/react-auth';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
 
 // O Contract ID deve estar configurado no .env (ex: NEXT_PUBLIC_SOROBAN_CONTRACT_ID)
 const CONTRACT_ID = process.env.NEXT_PUBLIC_SOROBAN_CONTRACT_ID || '';
@@ -12,6 +12,7 @@ const rpc = new StellarSdk.rpc.Server(RPC_URL);
 
 export function useEscrow() {
     const { user } = usePrivy();
+    const { wallets } = useWallets();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -20,11 +21,13 @@ export function useEscrow() {
         setError(null);
 
         try {
-            if (!user) throw new Error("Usuário não autenticado.");
+            if (!user) throw new Error("User not authenticated.");
 
-            const walletAddress = user.wallet?.address;
-            if (!walletAddress) throw new Error("Carteira Stellar não encontrada na conta Privy.");
-            if (!CONTRACT_ID) throw new Error("Contract ID do Escrow não configurado.");
+            // Get the Privy embedded wallet (created on login via embeddedWallets.createOnLogin)
+            const embeddedWallet = wallets.find(w => w.walletClientType === 'privy');
+            const walletAddress = embeddedWallet?.address ?? user.wallet?.address;
+            if (!walletAddress) throw new Error("Stellar wallet not found. Please log out and log in again.");
+            if (!CONTRACT_ID) throw new Error("Escrow Contract ID not configured.");
             
             const tokenAddress = process.env.NEXT_PUBLIC_USDC_CONTRACT_ID || 'CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA'; // Default Testnet USDC
 
@@ -60,8 +63,15 @@ export function useEscrow() {
 
             txApprove = StellarSdk.rpc.assembleTransaction(txApprove, simApprove).build();
 
-            // @ts-ignore - Privy signTransaction
-            const signedApproveXdr = await user.signTransaction(txApprove.toXDR());
+            // Sign with the Privy embedded wallet (v3 API)
+            let signedApproveXdr: string;
+            if (embeddedWallet && 'signTransaction' in embeddedWallet) {
+                signedApproveXdr = await (embeddedWallet as any).signTransaction(txApprove.toXDR());
+            } else {
+                // Fallback: Privy v2 pattern
+                // @ts-ignore
+                signedApproveXdr = await user.signTransaction(txApprove.toXDR());
+            }
             const signedTxApprove = StellarSdk.TransactionBuilder.fromXDR(signedApproveXdr, NETWORK_PASSPHRASE) as StellarSdk.Transaction;
             
             const resApprove = await rpc.sendTransaction(signedTxApprove);
@@ -106,8 +116,15 @@ export function useEscrow() {
 
             txLock = StellarSdk.rpc.assembleTransaction(txLock, simLock).build();
 
-            // @ts-ignore
-            const signedLockXdr = await user.signTransaction(txLock.toXDR());
+            // Sign with the Privy embedded wallet (v3 API)
+            let signedLockXdr: string;
+            if (embeddedWallet && 'signTransaction' in embeddedWallet) {
+                signedLockXdr = await (embeddedWallet as any).signTransaction(txLock.toXDR());
+            } else {
+                // Fallback: Privy v2 pattern
+                // @ts-ignore
+                signedLockXdr = await user.signTransaction(txLock.toXDR());
+            }
             const signedTxLock = StellarSdk.TransactionBuilder.fromXDR(signedLockXdr, NETWORK_PASSPHRASE) as StellarSdk.Transaction;
 
             const resLock = await rpc.sendTransaction(signedTxLock);

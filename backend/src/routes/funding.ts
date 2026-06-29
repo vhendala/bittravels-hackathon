@@ -21,48 +21,48 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     try {
         // 1. Friendbot for XLM
         const friendbotResponse = await fetch(`https://friendbot.stellar.org/?addr=${encodeURIComponent(address)}`);
-        
+
         if (!friendbotResponse.ok) {
             const errorText = await friendbotResponse.text();
             console.error(`[Funding] ❌ Failed to trigger Friendbot for ${address}:`, errorText);
             res.status(502).json({ error: 'Failed to request funds from Stellar network', details: errorText });
             return;
         }
-        
+
         console.log(`[Funding] ✅ Wallet ${address} funded with XLM by Friendbot.`);
 
         // 2. Transfer of 10,000 USDC via Soroban contract
         const rpcUrl = process.env.STELLAR_RPC_URL!;
         const oracleSecret = process.env.ORACLE_SECRET_KEY!;
         const usdcContractId = process.env.USDC_CONTRACT_ID!;
-        
+
         const server = new rpc.Server(rpcUrl);
         const oracleKeypair = Keypair.fromSecret(oracleSecret);
         const oracleAddress = oracleKeypair.publicKey();
-        
+
         const usdcContract = new Contract(usdcContractId);
         // 10,000 USDC -> 10,000 * 10^7 = 100,000,000,000
-        const amountStroops = '100000000000'; 
+        const amountStroops = '100000000000';
 
         const account = await server.getAccount(oracleAddress);
-        
+
         let tx = new TransactionBuilder(account, {
             fee: BASE_FEE,
             networkPassphrase: Networks.TESTNET,
         })
-        .addOperation(
-            usdcContract.call("transfer",
-                nativeToScVal(oracleAddress, { type: 'address' }),
-                nativeToScVal(address, { type: 'address' }),
-                nativeToScVal(amountStroops, { type: 'i128' })
+            .addOperation(
+                usdcContract.call("transfer",
+                    nativeToScVal(oracleAddress, { type: 'address' }),
+                    nativeToScVal(address, { type: 'address' }),
+                    nativeToScVal(amountStroops, { type: 'i128' })
+                )
             )
-        )
-        .setTimeout(30)
-        .build();
+            .setTimeout(30)
+            .build();
 
         console.log(`[Funding] Simulating USDC transaction...`);
         const simulatedTx = await server.simulateTransaction(tx);
-        
+
         if (!rpc.Api.isSimulationSuccess(simulatedTx)) {
             console.error(`[Funding] ❌ Simulation failed:`, simulatedTx);
             res.status(500).json({ error: 'Simulation failed for USDC transfer' });
@@ -74,7 +74,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
         tx.sign(oracleKeypair);
 
         let submitRes = await server.submitTransaction(tx);
-        
+
         if (submitRes.status === 'ERROR') {
             console.error(`[Funding] ❌ Error submitting transaction:`, submitRes);
             res.status(500).json({ error: 'Failed to submit USDC transfer' });
@@ -94,10 +94,10 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 
         if (txStatus?.status === rpc.Api.GetTransactionStatus.SUCCESS) {
             console.log(`[Funding] ✅ 10,000 USDC sent to ${address}`);
-            res.status(200).json({ 
-                success: true, 
-                message: 'Account activated and 10,000 USDC sent', 
-                txHash: submitRes.hash 
+            res.status(200).json({
+                success: true,
+                message: 'Account activated and 10,000 USDC sent',
+                txHash: submitRes.hash
             });
         } else {
             console.error(`[Funding] ❌ Transaction did not succeed. Status:`, txStatus?.status);
