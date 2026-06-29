@@ -14,6 +14,7 @@
    - [GET/POST `/api/flights/search`](#getpost-apiflightssearch)
    - [GET `/api/locations/resolve`](#get-apilocationsresolve)
    - [POST/GET `/api/bookings`](#postget-apibookings)
+   - [POST `/api/bookings/confirm/:bookingId`](#post-apibookingsconfirmbookingid)
    - [POST `/api/receive-reservation`](#post-apireceive-reservation)
    - [POST `/api/funding`](#post-apifunding)
    - [GET `/health`](#get-health)
@@ -22,6 +23,7 @@
    - [Reservation Sanitizer](#reservation-sanitizer-reservationsanitizerts)
 7. [Middleware](#middleware)
    - [API Key Auth](#api-key-auth-authts)
+8. [Soroban Oracle Service](#soroban-oracle-service-sorobants)
 8. [Security Model](#security-model)
 9. [In-Memory Flight Cache](#in-memory-flight-cache)
 10. [Environment Variables](#environment-variables)
@@ -174,6 +176,26 @@ A unique `bookingId` is generated deterministically as `BT<timestamp><random>` a
 
 ---
 
+### POST `/api/bookings/confirm/:bookingId`
+
+| Method | Route | Protected |
+|---|---|---|
+| `POST` | `/api/bookings/confirm/:bookingId` | ✅ API Key |
+
+**Purpose:** Acts as the backend trigger to finalize a booking after the airline issues the e-ticket.
+This endpoint calls the Soroban Service to securely sign and submit a `release_funds` transaction to the blockchain, which unlocks the USDC from the escrow and sends it to the travel agency.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Booking confirmed and funds released to agency.",
+  "txHash": "..."
+}
+```
+
+---
+
 ### POST `/api/receive-reservation`
 
 **File:** `src/routes/reservation_webhook.ts`
@@ -273,6 +295,22 @@ Pure utility functions with no side effects. Used by the reservation webhook to 
 
 ---
 
+## Soroban Oracle Service (`soroban.ts`)
+
+Located at `backend/src/services/soroban.ts`, this service serves as the **Oracle** for the Bit Travels platform.
+
+When a booking is confirmed, this service:
+1. Loads the `ORACLE_SECRET_KEY` from the environment.
+2. Formats the booking ID and Agency address into `ScVal` types.
+3. Builds a Soroban transaction to invoke `release_funds` on the Escrow contract.
+4. Performs a mandatory `simulateTransaction` RPC call to gather execution footprints and calculate fees.
+5. Assembles and signs the final transaction safely on the backend.
+6. Submits it to the Stellar network and polls until the transaction is successfully confirmed on the ledger.
+
+This architecture ensures that only the backend can authorize the release of funds, preventing premature withdrawals by the agency while keeping the user's funds safe.
+
+---
+
 ## Middleware
 
 ### API Key Auth (`middleware/auth.ts`)
@@ -330,6 +368,11 @@ To protect Amadeus API quota (which is rate-limited and metered), all flight sea
 | `NODE_ENV` | ❌ | `development` or `production` |
 | `BITTRAVELS_API_KEY` | ⚠️ Recommended | Shared secret for the API key guard middleware |
 | `PRIVY_APP_SECRET` | ⚠️ Recommended | Privy App Secret for server-side JWT verification |
+| `STELLAR_NETWORK` | ✅ | `testnet` or `public` |
+| `STELLAR_RPC_URL` | ✅ | Soroban RPC endpoint URL |
+| `SOROBAN_CONTRACT_ID` | ✅ | Escrow contract ID on the blockchain |
+| `ORACLE_SECRET_KEY` | ✅ | Backend private key used to sign `release_funds` |
+| `AGENCY_ADDRESS` | ✅ | The Stellar address of the travel agency receiving USDC |
 
 > `BITTRAVELS_API_KEY` should be set in all environments before going to production. Without it, all API routes are open to direct access.
 

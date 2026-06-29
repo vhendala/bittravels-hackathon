@@ -253,8 +253,10 @@ This prevents the API key from ever appearing in the browser's network inspector
 |---|---|---|
 | `NEXT_PUBLIC_BACKEND_URL` | Public | Base URL for direct backend calls (e.g., funding) |
 | `NEXT_PUBLIC_STELLAR_NETWORK` | Public | Stellar network (`TESTNET` or `PUBLIC`) |
-| `NEXT_PUBLIC_RPC_URL` | Public | Soroban RPC endpoint |
-| `NEXT_PUBLIC_CONTRACT_ID` | Public | Deployed Soroban Escrow contract address |
+| `NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE` | Public | Network Passphrase (e.g., `Test SDF Network ; September 2015`) |
+| `NEXT_PUBLIC_STELLAR_RPC_URL` | Public | Soroban RPC endpoint |
+| `NEXT_PUBLIC_SOROBAN_CONTRACT_ID` | Public | Deployed Soroban Escrow contract address |
+| `NEXT_PUBLIC_USDC_CONTRACT_ID` | Public | Stellar Asset Contract (SAC) address for the USDC token |
 | `NEXT_PUBLIC_PRIVY_APP_ID` | Public | Privy App ID (from dashboard.privy.io) |
 | `BITTRAVELS_API_KEY` | **Server-only** | Shared secret injected by Edge Middleware |
 | `API_URL` | **Server-only** | Internal backend URL for the Next.js proxy rewrite |

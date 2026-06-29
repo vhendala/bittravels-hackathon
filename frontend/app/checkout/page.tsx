@@ -8,6 +8,7 @@ import PassengerForm, { PassengerData } from '@/components/PassengerForm';
 import { ArrowLeft, Plane, Check, AlertCircle, Info, Mail, MessageCircle, CreditCard, QrCode, Copy, Wallet, Lock, Loader2, X } from 'lucide-react';
 import Header from '@/components/Header';
 import { usePrivy } from '@privy-io/react-auth';
+import { useEscrow } from '@/hooks/useEscrow';
 
 const COUNTRIES = [
     { name: 'Brasil', code: '55', flag: '🇧🇷' },
@@ -51,6 +52,13 @@ export default function CheckoutPage() {
     const [toastVisible, setToastVisible] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
     const [copied, setCopied] = useState(false);
+
+    // Escrow payment state machine
+    type EscrowStatus = 'idle' | 'approving' | 'locking' | 'success' | 'error';
+    const [escrowStatus, setEscrowStatus] = useState<EscrowStatus>('idle');
+    const [txHash, setTxHash] = useState<string | null>(null);
+    const [escrowError, setEscrowError] = useState<string | null>(null);
+    const { lockFunds } = useEscrow();
 
     const showToast = (message: string) => {
         setToastMessage(message);
@@ -519,28 +527,104 @@ export default function CheckoutPage() {
                                 </div>
                             </div>
 
-                            {/* Botão Já Paguei */}
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    console.log('[BitTravels] PIX confirmed by user. Initiating Soroban lock...');
-                                    showToast('Pagamento processado com sucesso! Iniciando travamento na blockchain...');
-                                }}
-                                className="w-full py-4 bg-[#F5B316] hover:bg-[#F5B316]/90 text-[#0C2B54] font-bold text-base rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
-                            >
-                                <Check size={20} />
-                                Já paguei
-                            </button>
+                            {/* Escrow Error Message */}
+                            {escrowStatus === 'error' && escrowError && (
+                                <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
+                                    <AlertCircle size={18} className="text-red-500 shrink-0 mt-0.5" />
+                                    <p className="text-sm text-red-700 font-medium">{escrowError}</p>
+                                </div>
+                            )}
+
+                            {/* Escrow Success Panel */}
+                            {escrowStatus === 'success' && txHash && (
+                                <div className="flex flex-col gap-3 p-5 bg-green-50 border border-green-200 rounded-2xl">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-1.5 bg-green-500 rounded-full">
+                                            <Check size={14} className="text-white" />
+                                        </div>
+                                        <p className="font-bold text-green-800 text-sm">Fundos travados com sucesso!</p>
+                                    </div>
+                                    <p className="text-xs text-green-700">Sua reserva está garantida na blockchain Stellar.</p>
+                                    <div className="bg-white rounded-xl border border-green-200 px-3 py-2 font-mono text-[10px] text-gray-500 break-all">{txHash}</div>
+                                    <a
+                                        href={`https://stellar.expert/explorer/testnet/tx/${txHash}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs font-bold text-green-700 underline underline-offset-2 hover:text-green-900 transition-colors"
+                                    >
+                                        Ver transação no Stellar Expert →
+                                    </a>
+                                </div>
+                            )}
+
+                            {/* Botão Já Paguei — state machine driven */}
+                            {escrowStatus !== 'success' && (
+                                <button
+                                    type="button"
+                                    disabled={escrowStatus === 'approving' || escrowStatus === 'locking'}
+                                    onClick={async () => {
+                                        setEscrowError(null);
+
+                                        // --- PASSO 1: APROVAÇÃO ---
+                                        setEscrowStatus('approving');
+                                        // lockFunds internally runs approve then lock sequentially
+                                        // We call it here and track status via the hook's internal steps
+                                        // by using the returned result.
+                                        // For per-step UI feedback we intercept status before calling.
+
+                                        // Convert BRL amount to USDC stroops (1 USDC = 10^7 stroops)
+                                        // Using pixTotal as the amount in BRL — adjust ratio as needed
+                                        const amountInStroops = Math.floor(pixTotal * 1e7);
+
+                                        // lockFunds handles: approve → (setEscrowStatus locking) → lock_funds → notify backend
+                                        // We update to 'locking' state after a short delay to simulate the approve confirmation UX
+                                        const lockingTimer = setTimeout(() => {
+                                            setEscrowStatus('locking');
+                                        }, 3500); // approximate time for approve polling
+
+                                        const result = await lockFunds(amountInStroops, bookingId || `BT${Date.now()}`);
+
+                                        clearTimeout(lockingTimer);
+
+                                        if (result?.success) {
+                                            setTxHash(result.hash ?? null);
+                                            setEscrowStatus('success');
+                                            showToast('Fundos travados no contrato! Sua reserva está confirmada.');
+                                        } else {
+                                            setEscrowStatus('error');
+                                            setEscrowError(result?.error || 'Erro desconhecido. Tente novamente.');
+                                        }
+                                    }}
+                                    className="w-full py-4 bg-[#F5B316] hover:bg-[#F5B316]/90 disabled:opacity-60 disabled:cursor-not-allowed text-[#0C2B54] font-bold text-base rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+                                >
+                                    {escrowStatus === 'approving' && (
+                                        <><Loader2 size={20} className="animate-spin" /> Iniciando aprovação de fundos...</>
+                                    )}
+                                    {escrowStatus === 'locking' && (
+                                        <><Lock size={20} className="animate-pulse" /> Travando fundos no Escrow...</>
+                                    )}
+                                    {(escrowStatus === 'idle' || escrowStatus === 'error') && (
+                                        <><Check size={20} /> Já paguei</>
+                                    )}
+                                </button>
+                            )}
 
                             {/* Voltar */}
-                            <button
-                                type="button"
-                                onClick={() => setShowPixScreen(false)}
-                                className="w-full py-3 border-2 border-gray-200 hover:border-[#0C2B54]/20 text-gray-500 hover:text-[#0C2B54] font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
-                            >
-                                <ArrowLeft size={16} />
-                                Voltar ao checkout
-                            </button>
+                            {escrowStatus !== 'approving' && escrowStatus !== 'locking' && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowPixScreen(false);
+                                        setEscrowStatus('idle');
+                                        setEscrowError(null);
+                                        setTxHash(null);
+                                    }}
+                                    className="w-full py-3 border-2 border-gray-200 hover:border-[#0C2B54]/20 text-gray-500 hover:text-[#0C2B54] font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+                                >
+                                    <ArrowLeft size={16} />
+                                    Voltar ao checkout
+                                </button>
+                            )}
                         </div>
                     </div>
                 </main>
