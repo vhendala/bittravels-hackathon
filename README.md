@@ -7,7 +7,7 @@
 
 | Resource | Link |
 |---|---|
-| 🎤 **Pitch Deck & Validation Interviews** | [View on Google Drive](https://drive.google.com/drive/folders/1EJiYNB5F2q1aZz1WX1BrDjrW7rKRjd_W?usp=sharing) |
+| 🎤 **Pitch Deck, Validation Interviews & Demo Video** | [View on Google Drive](https://drive.google.com/drive/folders/1EJiYNB5F2q1aZz1WX1BrDjrW7rKRjd_W?usp=sharing) |
 
 ---
 
