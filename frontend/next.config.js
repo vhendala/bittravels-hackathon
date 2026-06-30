@@ -3,12 +3,27 @@ const nextConfig = {
   reactStrictMode: true,
   async rewrites() {
     const apiUrl = process.env.API_URL || 'http://localhost:5000';
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${apiUrl}/api/:path*`, // Proxy to Backend
-      },
-    ];
+    return {
+      // beforeFiles: rotas que o Next.js resolve ANTES de checar o proxy
+      // Estas rotas locais são servidas diretamente pelo Next.js (sem proxy)
+      beforeFiles: [
+        {
+          source: '/api/locations/:path*',
+          destination: '/api/locations/:path*',
+        },
+        {
+          source: '/api/receive-reservation',
+          destination: '/api/receive-reservation',
+        },
+      ],
+      // afterFiles: rotas que não foram resolvidas localmente → proxy para o backend
+      afterFiles: [
+        {
+          source: '/api/:path*',
+          destination: `${apiUrl}/api/:path*`,
+        },
+      ],
+    };
   },
   webpack: (config) => {
     // Privy SDK ships with optional peer-deps for many chains (Solana, Farcaster,
