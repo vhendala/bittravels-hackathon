@@ -3,6 +3,7 @@ import './globals.css'
 import { LanguageProvider } from '@/contexts/LanguageContext'
 import { FlightProvider } from '@/contexts/FlightContext'
 import PrivyProviders from '@/components/PrivyProviders'
+import WalletDebugBanner from '@/components/WalletDebugBanner'
 
 export const metadata: Metadata = {
   title: 'Bit Travels - Compre sua viagem com pagamento protegido',
@@ -20,7 +21,8 @@ export default function RootLayout({
         <LanguageProvider>
           <FlightProvider>
             <PrivyProviders>
-              {children}
+                <WalletDebugBanner />
+                {children}
             </PrivyProviders>
           </FlightProvider>
         </LanguageProvider>

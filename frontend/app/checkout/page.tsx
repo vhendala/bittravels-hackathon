@@ -316,11 +316,60 @@ export default function CheckoutPage() {
 
     const generateBookingId = () => {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let id = '';
+        let id = 'BT';
         for (let i = 0; i < 4; i++) {
             id += chars.charAt(Math.floor(Math.random() * chars.length));
         }
         return id;
+    };
+
+    const buildWebhookPayload = (bookingIdStr: string) => {
+        const mainPassenger = adults[0] || children[0] || babies[0];
+
+        let routeStr = '';
+        let departureDate = '';
+        let returnDateStr = '';
+        if (selectedFlight && selectedFlight.itineraries && selectedFlight.itineraries.length > 0) {
+            const firstIti = selectedFlight.itineraries[0];
+            const lastIti = selectedFlight.itineraries[selectedFlight.itineraries.length - 1];
+
+            const origin = firstIti.segments[0].departure.iataCode;
+            const destination = firstIti.segments[firstIti.segments.length - 1].arrival.iataCode;
+            const isRoundTrip = selectedFlight.itineraries.length === 2 && getTripTypeLabel() === 'Ida e Volta';
+
+            if (isRoundTrip) {
+                routeStr = `${origin}-${destination} (ida e volta)`;
+                returnDateStr = selectedFlight.itineraries[1].segments[0].departure.at;
+            } else {
+                routeStr = `${origin}-${lastIti.segments[lastIti.segments.length - 1].arrival.iataCode}`;
+            }
+
+            departureDate = firstIti.segments[0].departure.at;
+        }
+
+        return {
+            internal_id: bookingIdStr,
+            customer: {
+                first_name: mainPassenger?.firstName || 'Unknown',
+                last_name: mainPassenger?.lastName || 'Unknown',
+                country: mainPassenger?.country || 'Brasil',
+                passport: mainPassenger?.documentNumber || '',
+                cpf: mainPassenger?.documentNumber || '',
+                birth_date: mainPassenger ? `${mainPassenger.birthYear}-${mainPassenger.birthMonth}-${mainPassenger.birthDay}` : '2000-01-01',
+                gender: mainPassenger?.gender === 'MASCULINO' ? 'M' : 'F',
+                email: contactEmail,
+                whatsapp_phone: `(+${selectedCountry.code}) ${contactWhatsapp}`
+            },
+            payment: {
+                payment_method: paymentMethod
+            },
+            flight: {
+                amadeus_flight_id: selectedFlight?.id || 'Unknown',
+                route: routeStr || 'Unknown',
+                departure_date: departureDate || new Date().toISOString(),
+                return_date: returnDateStr || undefined
+            }
+        };
     };
 
     const handleSubmit = async () => {
@@ -353,54 +402,7 @@ export default function CheckoutPage() {
         try {
             const newBookingId = generateBookingId();
 
-            // Build payload
-            const mainPassenger = adults[0] || children[0] || babies[0];
-
-            let routeStr = '';
-            let departureDate = '';
-            let returnDateStr = '';
-            if (selectedFlight && selectedFlight.itineraries && selectedFlight.itineraries.length > 0) {
-                const firstIti = selectedFlight.itineraries[0];
-                const lastIti = selectedFlight.itineraries[selectedFlight.itineraries.length - 1];
-
-                const origin = firstIti.segments[0].departure.iataCode;
-                const destination = firstIti.segments[firstIti.segments.length - 1].arrival.iataCode;
-                const isRoundTrip = selectedFlight.itineraries.length === 2 && getTripTypeLabel() === 'Ida e Volta';
-
-                if (isRoundTrip) {
-                    routeStr = `${origin}-${destination} (ida e volta)`;
-                    returnDateStr = selectedFlight.itineraries[1].segments[0].departure.at;
-                } else {
-                    routeStr = `${origin}-${lastIti.segments[lastIti.segments.length - 1].arrival.iataCode}`;
-                }
-
-                departureDate = firstIti.segments[0].departure.at;
-            }
-
-            const payload = {
-                internal_id: newBookingId,
-                customer: {
-                    first_name: mainPassenger?.firstName || 'Unknown',
-                    last_name: mainPassenger?.lastName || 'Unknown',
-                    country: mainPassenger?.country || 'Brasil',
-                    passport: mainPassenger?.documentNumber || '',
-                    cpf: mainPassenger?.documentNumber || '',
-                    birth_date: mainPassenger ? `${mainPassenger.birthYear}-${mainPassenger.birthMonth}-${mainPassenger.birthDay}` : '2000-01-01',
-                    gender: mainPassenger?.gender === 'MASCULINO' ? 'M' : 'F',
-                    email: contactEmail,
-                    whatsapp_phone: `(+${selectedCountry.code}) ${contactWhatsapp}`
-                },
-                payment: {
-                    payment_method: paymentMethod
-                },
-                flight: {
-                    amadeus_flight_id: selectedFlight?.id || 'Unknown',
-                    route: routeStr || 'Unknown',
-                    departure_date: departureDate || new Date().toISOString(),
-                    return_date: returnDateStr || undefined
-                }
-            };
-
+            const payload = buildWebhookPayload(newBookingId);
             console.log('Payload sendo enviado:', payload);
 
             const response = await fetch(`/api/receive-reservation`, {
@@ -469,10 +471,6 @@ export default function CheckoutPage() {
                                     <p className="text-3xl font-bold text-[#0C2B54]">
                                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pixTotal)}
                                     </p>
-                                </div>
-                                <div className="flex items-center gap-1.5 bg-green-100 text-green-700 px-3 py-1.5 rounded-full border border-green-200">
-                                    <Lock size={12} />
-                                    <span className="text-xs font-bold">5% OFF</span>
                                 </div>
                             </div>
 
@@ -572,24 +570,47 @@ export default function CheckoutPage() {
                                         // by using the returned result.
                                         // For per-step UI feedback we intercept status before calling.
 
-                                        // Convert BRL amount to USDC stroops (1 USDC = 10^7 stroops)
-                                        // Using pixTotal as the amount in BRL — adjust ratio as needed
-                                        const amountInStroops = Math.floor(pixTotal * 1e7);
+                                        // Convert BRL/USD amount to XLM stroops (1 XLM = 10^7 stroops)
+                                        const currency = selectedFlight?.price?.currency || 'BRL';
+                                        let conversionRate = 1;
+                                        
+                                        // Cotação real e atualizada:
+                                        // 1 XLM = ~R$ 0,90
+                                        // 1 XLM = ~$ 0,178
+                                        if (currency === 'BRL') conversionRate = 1 / 0.90; 
+                                        if (currency === 'USD') conversionRate = 1 / 0.178; 
+                                        if (currency === 'EUR') conversionRate = 1 / 0.165;
 
-                                        // lockFunds handles: approve → (setEscrowStatus locking) → lock_funds → notify backend
+                                        const amountInStroops = Math.floor(pixTotal * conversionRate * 1e7);
+
+                                        // lockFunds handles: approve → (setEscrowStatus locking) → lock_funds
                                         // We update to 'locking' state after a short delay to simulate the approve confirmation UX
                                         const lockingTimer = setTimeout(() => {
                                             setEscrowStatus('locking');
                                         }, 3500); // approximate time for approve polling
 
-                                        const result = await lockFunds(amountInStroops, bookingId || `BT${Date.now()}`);
+                                        const finalBookingId = bookingId || `BT${Date.now()}`;
+                                        const result = await lockFunds(amountInStroops, finalBookingId);
 
                                         clearTimeout(lockingTimer);
 
                                         if (result?.success) {
                                             setTxHash(result.hash ?? null);
-                                            setEscrowStatus('success');
-                                            showToast('Fundos travados no contrato! Sua reserva está confirmada.');
+                                            try {
+                                                const webhookRes = await fetch('/api/receive-reservation', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify(buildWebhookPayload(finalBookingId))
+                                                });
+                                                if (!webhookRes.ok) {
+                                                    throw new Error('Erro ao avisar o servidor');
+                                                }
+                                                setEscrowStatus('success');
+                                                showToast('Fundos travados no contrato! Sua reserva está confirmada.');
+                                            } catch (e) {
+                                                setEscrowStatus('error');
+                                                setEscrowError('Transação aprovada na rede, mas houve erro ao avisar o servidor.');
+                                            }
                                         } else {
                                             setEscrowStatus('error');
                                             setEscrowError(result?.error || 'Erro desconhecido. Tente novamente.');

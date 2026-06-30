@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import * as StellarSdk from '@stellar/stellar-sdk';
-import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { useLocalStellarWallet } from './useLocalStellarWallet';
 
 // O Contract ID deve estar configurado no .env (ex: NEXT_PUBLIC_SOROBAN_CONTRACT_ID)
-const CONTRACT_ID = process.env.NEXT_PUBLIC_SOROBAN_CONTRACT_ID || '';
+const CONTRACT_ID = process.env.NEXT_PUBLIC_SOROBAN_CONTRACT_ID || 'CAY5JUTWZABBP5WUMJ6RYUDTVWTEOID26XA4UXLQIP2REP47VLFKKUVA';
 // Opcional: Configurar rede (Testnet por padrão)
 const NETWORK_PASSPHRASE = process.env.NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE || StellarSdk.Networks.TESTNET;
 const RPC_URL = process.env.NEXT_PUBLIC_STELLAR_RPC_URL || 'https://soroban-testnet.stellar.org';
@@ -11,8 +11,7 @@ const RPC_URL = process.env.NEXT_PUBLIC_STELLAR_RPC_URL || 'https://soroban-test
 const rpc = new StellarSdk.rpc.Server(RPC_URL);
 
 export function useEscrow() {
-    const { user } = usePrivy();
-    const { wallets } = useWallets();
+    const { keypair, publicKey } = useLocalStellarWallet();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -21,22 +20,37 @@ export function useEscrow() {
         setError(null);
 
         try {
-            if (!user) throw new Error("User not authenticated.");
-
-            // Get the Privy embedded wallet (created on login via embeddedWallets.createOnLogin)
-            const embeddedWallet = wallets.find(w => w.walletClientType === 'privy');
-            const walletAddress = embeddedWallet?.address ?? user.wallet?.address;
-            if (!walletAddress) throw new Error("Stellar wallet not found. Please log out and log in again.");
+            if (!keypair || !publicKey) throw new Error("Local Stellar wallet not found.");
             if (!CONTRACT_ID) throw new Error("Escrow Contract ID not configured.");
             
-            const tokenAddress = process.env.NEXT_PUBLIC_USDC_CONTRACT_ID || 'CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA'; // Default Testnet USDC
+            const tokenAddress = process.env.NEXT_PUBLIC_USDC_CONTRACT_ID || 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC'; // Native XLM SAC
+            const horizon = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
 
-            // Fetch account and current ledger to set expiration
-            const account = await rpc.getAccount(walletAddress);
+            // 1. Ensure Account exists (Friendbot if 404)
+            let accountInfo;
+            try {
+                accountInfo = await horizon.loadAccount(publicKey);
+            } catch (e: any) {
+                if (e?.response?.status === 404) {
+                    console.log("[useEscrow] Conta não existe. Chamando Friendbot para XLM...");
+                    await fetch(`https://friendbot.stellar.org/?addr=${publicKey}`);
+                    await new Promise(resolve => setTimeout(resolve, 4000));
+                    accountInfo = await horizon.loadAccount(publicKey);
+                } else {
+                    throw e;
+                }
+            }
+
+            // XLM is automatically trusted, no ChangeTrust needed.
+            const requiredUsdc = amount / 1e7;
+            console.log(`[useEscrow] Bloqueando ${requiredUsdc} XLM...`);
+
+            // Fetch account and current ledger to set expiration for Soroban
+            const account = await rpc.getAccount(publicKey);
             const latestLedger = await rpc.getLatestLedger();
             const expirationLedger = latestLedger.sequence + 1000;
 
-            const clientScAddress = StellarSdk.Address.fromString(walletAddress).toScVal();
+            const clientScAddress = StellarSdk.Address.fromString(publicKey).toScVal();
             const spenderScAddress = StellarSdk.Address.fromString(CONTRACT_ID).toScVal();
             const amountI128 = StellarSdk.nativeToScVal(BigInt(Math.floor(amount)), { type: "i128" });
             const expirationU32 = StellarSdk.nativeToScVal(expirationLedger, { type: "u32" });
@@ -61,20 +75,12 @@ export function useEscrow() {
                 throw new Error(`Falha na simulação de aprovação: ${simApprove.error}`);
             }
 
-            txApprove = StellarSdk.rpc.assembleTransaction(txApprove, simApprove).build();
+            txApprove = StellarSdk.rpc.assembleTransaction(txApprove, simApprove).build() as any;
 
-            // Sign with the Privy embedded wallet (v3 API)
-            let signedApproveXdr: string;
-            if (embeddedWallet && 'signTransaction' in embeddedWallet) {
-                signedApproveXdr = await (embeddedWallet as any).signTransaction(txApprove.toXDR());
-            } else {
-                // Fallback: Privy v2 pattern
-                // @ts-ignore
-                signedApproveXdr = await user.signTransaction(txApprove.toXDR());
-            }
-            const signedTxApprove = StellarSdk.TransactionBuilder.fromXDR(signedApproveXdr, NETWORK_PASSPHRASE) as StellarSdk.Transaction;
+            // Sign directly with local keypair
+            txApprove.sign(keypair);
             
-            const resApprove = await rpc.sendTransaction(signedTxApprove);
+            const resApprove = await rpc.sendTransaction(txApprove);
             if (resApprove.status === "ERROR") {
                 throw new Error(`Erro ao enviar aprovação: ${resApprove.errorResult}`);
             }
@@ -98,7 +104,7 @@ export function useEscrow() {
             console.log("[useEscrow] Passo 2: Executando lock_funds no Escrow...");
             
             // Recarrega a account para atualizar o sequence number após a primeira transação
-            const updatedAccount = await rpc.getAccount(walletAddress);
+            const updatedAccount = await rpc.getAccount(publicKey);
             const escrowContract = new StellarSdk.Contract(CONTRACT_ID);
 
             let txLock = new StellarSdk.TransactionBuilder(updatedAccount, {
@@ -114,20 +120,12 @@ export function useEscrow() {
                 throw new Error(`Falha na simulação do lock_funds: ${simLock.error}`);
             }
 
-            txLock = StellarSdk.rpc.assembleTransaction(txLock, simLock).build();
+            txLock = StellarSdk.rpc.assembleTransaction(txLock, simLock).build() as any;
 
-            // Sign with the Privy embedded wallet (v3 API)
-            let signedLockXdr: string;
-            if (embeddedWallet && 'signTransaction' in embeddedWallet) {
-                signedLockXdr = await (embeddedWallet as any).signTransaction(txLock.toXDR());
-            } else {
-                // Fallback: Privy v2 pattern
-                // @ts-ignore
-                signedLockXdr = await user.signTransaction(txLock.toXDR());
-            }
-            const signedTxLock = StellarSdk.TransactionBuilder.fromXDR(signedLockXdr, NETWORK_PASSPHRASE) as StellarSdk.Transaction;
+            // Sign directly with local keypair
+            txLock.sign(keypair);
 
-            const resLock = await rpc.sendTransaction(signedTxLock);
+            const resLock = await rpc.sendTransaction(txLock);
             if (resLock.status === "ERROR") {
                 throw new Error(`Erro ao enviar lock_funds: ${resLock.errorResult}`);
             }
@@ -145,18 +143,7 @@ export function useEscrow() {
 
             console.log("[useEscrow] Passo 2 Concluído: Fundos travados no contrato.");
 
-            // ==========================================
-            // PASSO 3: AVISAR BACKEND
-            // ==========================================
-            const backendRes = await fetch('/api/receive-reservation', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ booking_id: bookingId })
-            });
-
-            if (!backendRes.ok) {
-                throw new Error("Transação aprovada na rede, mas houve erro ao avisar o servidor.");
-            }
+            console.log("[useEscrow] Passo 2 Concluído: Fundos travados no contrato.");
 
             return { success: true, hash: resLock.hash };
 

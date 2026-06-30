@@ -19,19 +19,9 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     console.log(`[Funding] Received funding request for wallet: ${address}`);
 
     try {
-        // 1. Friendbot for XLM
-        const friendbotResponse = await fetch(`https://friendbot.stellar.org/?addr=${encodeURIComponent(address)}`);
+        console.log(`[Funding] Starting USDC transfer for wallet ${address}...`);
 
-        if (!friendbotResponse.ok) {
-            const errorText = await friendbotResponse.text();
-            console.error(`[Funding] ❌ Failed to trigger Friendbot for ${address}:`, errorText);
-            res.status(502).json({ error: 'Failed to request funds from Stellar network', details: errorText });
-            return;
-        }
-
-        console.log(`[Funding] ✅ Wallet ${address} funded with XLM by Friendbot.`);
-
-        // 2. Transfer of 10,000 USDC via Soroban contract
+        // Transfer of 10,000 USDC via Soroban contract
         const rpcUrl = process.env.STELLAR_RPC_URL!;
         const oracleSecret = process.env.ORACLE_SECRET_KEY!;
         const usdcContractId = process.env.USDC_CONTRACT_ID!;
@@ -44,7 +34,14 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
         // 10,000 USDC -> 10,000 * 10^7 = 100,000,000,000
         const amountStroops = '100000000000';
 
-        const account = await server.getAccount(oracleAddress);
+        let account;
+        try {
+            account = await server.getAccount(oracleAddress);
+        } catch (e) {
+            console.error("[Funding] Oracle account not found on network!");
+            res.status(500).json({ error: 'Oracle account not initialized' });
+            return;
+        }
 
         let tx = new TransactionBuilder(account, {
             fee: BASE_FEE,
@@ -60,12 +57,15 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
             .setTimeout(30)
             .build();
 
-        console.log(`[Funding] Simulating USDC transaction...`);
+        console.log(`[Funding] Simulating USDC transfer...`);
         const simulatedTx = await server.simulateTransaction(tx);
 
         if (!rpc.Api.isSimulationSuccess(simulatedTx)) {
-            console.error(`[Funding] ❌ Simulation failed:`, simulatedTx);
-            res.status(500).json({ error: 'Simulation failed for USDC transfer' });
+            console.error(`[Funding] ❌ Simulation failed:`, JSON.stringify(simulatedTx, null, 2));
+            res.status(500).json({ 
+                error: 'Simulation failed for USDC transfer', 
+                details: (simulatedTx as any).error || 'Unknown simulation error'
+            });
             return;
         }
 

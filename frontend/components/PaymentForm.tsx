@@ -39,7 +39,7 @@ const paymentMethods = [
         id: 'PIX',
         name: 'PIX',
         icon: QrCode,
-        description: 'Desconto de 5% e aprovação na hora',
+        description: 'Aprovação na hora',
         color: 'from-green-500 to-emerald-500'
     },
     {
@@ -247,7 +247,7 @@ export default function PaymentForm({ data, onChange }: PaymentFormProps) {
                             </button>
                         </div>
                         <p className="text-[10px] text-gray-500 italic">
-                            O desconto de 5% será aplicado automaticamente ao finalizar o pagamento.
+                            O pagamento será confirmado automaticamente em instantes.
                         </p>
                     </motion.div>
                 ) : data.method === 'CRYPTO' ? (

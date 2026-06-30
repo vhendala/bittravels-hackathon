@@ -1,314 +1,105 @@
 # Bit Travels — Frontend Documentation
 
-> **Stack:** Next.js 14 · React 18 · TypeScript · Tailwind CSS · Framer Motion · Privy SDK
+> **Stack:** Next.js 14 (App Router) · React · Tailwind CSS · Privy (Embedded Wallets) · Stellar SDK
 
 ---
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Architecture](#architecture)
+2. [Key Features](#key-features)
 3. [Directory Structure](#directory-structure)
-4. [Pages & Routing](#pages--routing)
-5. [Components](#components)
-6. [State Management & Contexts](#state-management--contexts)
-7. [Authentication & Embedded Wallets (Privy)](#authentication--embedded-wallets-privy)
-8. [Edge Middleware](#edge-middleware)
-9. [Environment Variables](#environment-variables)
-10. [API Proxy & Backend Communication](#api-proxy--backend-communication)
-11. [Dependencies](#dependencies)
-12. [Running Locally](#running-locally)
+4. [Authentication & Web3 (Privy)](#authentication--web3-privy)
+5. [The `useEscrow` Hook](#the-useescrow-hook)
+6. [Checkout Flow](#checkout-flow)
+7. [Environment Variables](#environment-variables)
+8. [Running Locally](#running-locally)
 
 ---
 
 ## Overview
 
-The Bit Travels frontend is a **Next.js 14 App Router** application that serves as the consumer-facing travel booking platform. It integrates directly with:
-
-- **Amadeus GDS** (via the backend proxy) to search real-time flight offers worldwide.
-- **Privy SDK** to provide invisible, non-custodial **Stellar embedded wallets** — the user signs in with email or social login and gets a full Stellar keypair managed via MPC, without ever seeing a seed phrase.
-- The **Bit Travels Backend** for all flight search, booking creation, location resolution, and Stellar Friendbot funding orchestration.
-
-The application is fully **stateless** on the server side — no user data is persisted in the frontend layer. All sensitive keys are injected at the Edge layer via middleware and never exposed to the browser bundle.
+The Bit Travels frontend is a modern web application designed to abstract the complexities of Web3 and provide a seamless, Web2-like user experience for travelers. Built with Next.js and Tailwind CSS, it integrates deeply with the Stellar ecosystem to facilitate secure, non-custodial escrow payments for flight reservations.
 
 ---
 
-## Architecture
+## Key Features
 
-```
-Browser (Client Components)
-     │
-     ├─ PrivyProviders (session + embedded wallet lifecycle)
-     ├─ LanguageContext (i18n, PT-BR / EN)
-     └─ FlightContext (search results, selected flight, form state)
-     │
-     ▼
-Next.js Edge Middleware (middleware.ts)
-     │  Injects x-api-key silently before forwarding to backend
-     ▼
-Next.js Rewrites (next.config.js)
-     │  /api/* → http://localhost:5000/api/*
-     ▼
-Bit Travels Backend (Node.js / Express)
-```
+- **Flight Search**: Real-time flight search interface connecting to the Mocked Amadeus backend.
+- **Social Login & Embedded Wallets**: Integration with Privy allows users to log in via email or Google, automatically generating a secure, non-custodial Stellar wallet in the background without requiring browser extensions or seed phrases.
+- **Smart Contract Integration**: A custom React Hook (`useEscrow`) handles the sequential blockchain transactions required to lock funds securely.
+- **Responsive Design**: fully optimized for desktop and mobile environments.
 
 ---
 
 ## Directory Structure
 
-```
+```text
 frontend/
-├── app/
-│   ├── layout.tsx            # Root layout: wraps all providers (Language, Flight, Privy)
-│   ├── page.tsx              # Landing page (renders all homepage sections)
-│   ├── globals.css           # Global styles and Tailwind base
-│   └── checkout/
-│       └── page.tsx          # Multi-step checkout flow (passengers, contact, payment)
-├── components/
-│   ├── PrivyProviders.tsx    # Client component: initialises PrivyProvider
-│   ├── PrivyLogin.tsx        # Login UI + Stellar wallet creation + Friendbot funding
-│   ├── FlightSearch.tsx      # Full-featured flight search panel (one-way, round-trip, multi-city)
-│   ├── CityAutocomplete.tsx  # IATA / city autocomplete input with debounce
-│   ├── PassengerSelector.tsx # Passenger count picker (adults, children, infants)
-│   ├── PassengerForm.tsx     # Per-passenger data entry form
-│   ├── ContactForm.tsx       # Lead contact details form
-│   ├── PaymentForm.tsx       # Payment method selection and checkout summary
-│   ├── ComparisonTable.tsx   # Crypto vs. traditional payment comparison
-│   ├── Header.tsx            # Navigation bar
-│   ├── Hero.tsx              # Landing hero section
-│   ├── Services.tsx          # Services highlight section
-│   ├── ValueProposition.tsx  # Value proposition cards
-│   ├── Testimonials.tsx      # Customer testimonials carousel
-│   ├── FAQ.tsx               # Frequently Asked Questions accordion
-│   ├── Footer.tsx            # Site footer
-│   └── FloatingWhatsApp.tsx  # Floating WhatsApp CTA button
-├── contexts/
-│   ├── FlightContext.tsx     # Global flight search state (results, selection, form persistence)
-│   └── LanguageContext.tsx   # Full i18n context with PT-BR and EN string maps
-├── config/
-│   └── constants.ts          # Shared frontend constants
-├── utils/
-│   └── detectUserLanguage.ts # Browser language detection utility
-├── middleware.ts              # Next.js Edge Middleware (API key injection)
-├── next.config.js            # Next.js config (rewrites proxy + webpack stubs for Privy)
-├── tailwind.config.js        # Tailwind CSS configuration
-├── tsconfig.json             # TypeScript configuration
-└── .env                      # Environment variables (not committed)
+├── app/                  # Next.js App Router (Pages & API Routes)
+│   ├── checkout/         # Checkout and payment flow
+│   ├── search/           # Flight search results page
+│   ├── layout.tsx        # Global layout and context providers
+│   └── page.tsx          # Landing page
+├── components/           # Reusable React components (FlightCard, PaymentForm, etc.)
+├── contexts/             # React Contexts (Language, Theme)
+├── hooks/                # Custom React Hooks (`useEscrow`, `useLocalStellarWallet`)
+├── public/               # Static assets (Images, Icons)
+├── tailwind.config.js    # Tailwind styling configuration
+└── next.config.js        # Next.js settings and backend proxy rewrites
 ```
 
 ---
 
-## Pages & Routing
+## Authentication & Web3 (Privy)
 
-### `/` — Landing Page (`app/page.tsx`)
+We utilize **Privy** to implement Account Abstraction. The `<PrivyProvider>` wraps the application in `layout.tsx`.
 
-The main landing page renders all marketing sections in sequence:
-
-| Section | Component |
-|---|---|
-| Navigation bar | `Header` |
-| Hero banner | `Hero` |
-| Flight search panel | `FlightSearch` |
-| Value proposition | `ValueProposition` |
-| Services overview | `Services` |
-| Crypto vs. traditional comparison | `ComparisonTable` |
-| Customer testimonials | `Testimonials` |
-| FAQ | `FAQ` |
-| Footer | `Footer` |
-| WhatsApp floating button | `FloatingWhatsApp` |
-
-### `/checkout` — Booking Checkout (`app/checkout/page.tsx`)
-
-A multi-step wizard that guides the user from flight selection to payment. Steps:
-
-1. **Passenger details** — individual form per adult/child/infant
-2. **Contact details** — lead passenger contact info
-3. **Payment** — cryptocurrency payment method selection and final summary
-
-The checkout page reads the `selectedFlight` and `searchParams` from `FlightContext` to pre-populate the booking summary.
+When a user logs in, Privy generates an embedded wallet. We use the custom hook `useLocalStellarWallet` to extract the Stellar public key from this embedded wallet. Since Privy's embedded wallets currently do not natively expose Stellar transaction signing through standard Web3 providers (like wagmi for EVM), we handle the key derivation locally for the hackathon demonstration, ensuring the user's local `Keypair` is used to sign Stellar SDK transactions.
 
 ---
 
-## Components
+## The `useEscrow` Hook
 
-### `FlightSearch.tsx`
+Located at `hooks/useEscrow.ts`, this hook is the bridge between the React frontend and the Soroban smart contract.
 
-The most complex component in the application. Handles:
-
-- **Trip types:** One-Way, Round-Trip, and Multi-City (up to N segments)
-- **Passenger configuration:** adults, children (with individual age inputs), and infants
-- **IATA autocomplete** via `CityAutocomplete` backed by `GET /api/locations/resolve`
-- **In-memory results rendering** with price sorting, segment breakdown, and flight duration
-- **Branded Fares:** Calls the backend to fetch fare families (baggage, flexibility tiers) for a selected offer
-- On selecting a flight, it persists the choice and form state to `FlightContext` and navigates to `/checkout`
-
-### `CityAutocomplete.tsx`
-
-Debounced IATA/city search input that queries `GET /api/locations/resolve?keyword=...`. Displays results in a dropdown with city name, country, and IATA code.
-
-### `PrivyLogin.tsx`
-
-- Uses `usePrivy()` to access the session state and `login()` / `logout()` methods.
-- Uses `useCreateWallet({ chainType: 'stellar' })` from `@privy-io/react-auth/extended-chains` to derive a **Stellar keypair** via MPC immediately after the user authenticates.
-- Displays the derived public address (`G...`) to the user.
-- Provides a "Request Testnet Funds" button that calls `POST /api/funding` on the backend, which triggers the **Stellar Friendbot** to fund the account with 10,000 XLM on Testnet.
-
-> **Security note:** The user's private key never leaves the Privy MPC infrastructure. The backend receives only the public address.
+**Core Workflow (`lockFunds`):**
+1. **Network Configuration**: Connects to the Soroban Testnet RPC.
+2. **Account Hydration**: Fetches the user's account sequence and details. If the account doesn't exist (404), it automatically calls **Friendbot** to fund the wallet with testnet XLM.
+3. **Approval (Approve)**: Builds, simulates, signs, and submits a transaction invoking the `approve` function on the Native XLM SAC, allowing the Escrow contract to spend the specified amount.
+4. **Locking (Lock Funds)**: Once approved, it builds, simulates, signs, and submits a transaction invoking the `lock_funds` function on the Escrow contract.
+5. **Confirmation**: Polls the network until the transaction is confirmed, returning the transaction hash for explorer verification.
 
 ---
 
-## State Management & Contexts
+## Checkout Flow
 
-### `FlightContext` (`contexts/FlightContext.tsx`)
-
-A React Context that acts as the global in-memory store for the flight booking flow. It persists state across navigation (search → results → checkout) without any browser storage.
-
-| State | Type | Purpose |
-|---|---|---|
-| `selectedFlight` | `FlightOffer \| null` | The flight the user clicked to book |
-| `searchParams` | `SearchParams \| null` | The active search criteria |
-| `searchResults` | `FlightOffer[]` | The last batch of results from the API |
-| `searchFormState` | `SearchFormState \| null` | Full form state to restore on back-navigation |
-| `locationNames` | `Record<string, {...}>` | IATA → city/country name cache |
-
-Also exposes `resolveLocationNames(iatas[])` to lazily fetch and cache city names for display.
-
-### `LanguageContext` (`contexts/LanguageContext.tsx`)
-
-Provides PT-BR / EN internationalisation across all components. Auto-detects the user's browser language via `utils/detectUserLanguage.ts`. All UI strings are declared inside this context — no external i18n library is used.
-
----
-
-## Authentication & Embedded Wallets (Privy)
-
-Privy is configured as a **Tier 2 chain** integration for **Stellar**. The SDK manages the user lifecycle and MPC key shares transparently.
-
-### Configuration (`components/PrivyProviders.tsx`)
-
-```tsx
-<PrivyProvider
-  appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID}
-  config={{
-    loginMethods: ['email'],
-    appearance: { theme: 'light', accentColor: '#676FFF' },
-  }}
->
-```
-
-### Stellar Wallet Flow
-
-```
-User clicks "Login" 
-  → Privy modal (email OTP)
-    → User authenticated
-      → useEffect detects no Stellar wallet
-        → createWallet({ chainType: 'stellar' }) called
-          → MPC key shares generated server-side
-            → Public address returned and displayed
-              → User clicks "Request Funds"
-                → POST /api/funding { address: "GXXX..." }
-                  → Backend calls Friendbot
-                    → Account activated on Testnet
-```
-
-### Webpack Stubs (Optional Peer Dependencies)
-
-Privy's SDK bundles optional integrations for Solana, Ethereum, Farcaster, and Stripe onramp. Since the project uses only Stellar, the following modules are stubbed out in `next.config.js` to prevent build errors:
-
-```js
-'@farcaster/mini-app-solana': false,
-'@farcaster/frame-wagmi-connector': false,
-'@farcaster/frame-core': false,
-'@stripe/crypto': false,
-'@stripe/stripe-js': false,
-'@solana/web3.js': false,
-'@solana/wallet-adapter-base': false,
-```
-
----
-
-## Edge Middleware
-
-**File:** `middleware.ts`
-
-Next.js Edge Middleware runs on Vercel's Edge Runtime (or Node.js locally) before every request that matches `/api/*`. Its sole responsibility is to **inject the `x-api-key` header** silently on behalf of the browser:
-
-```
-Browser request → GET /api/flights/search
-      ↓ (middleware intercepts)
-      ↓ Adds header: x-api-key: <BITTRAVELS_API_KEY>
-      ↓
-Next.js Rewrite → http://backend:5000/api/flights/search
-```
-
-This prevents the API key from ever appearing in the browser's network inspector or bundle.
+1. **Selection**: User selects a flight from the search results.
+2. **Data Entry**: User inputs passenger details on the `/checkout` page.
+3. **Payment Method**:
+   - Standard Web2 methods (Credit Card) are mocked.
+   - The **"PIX"** (Hackathon Web3 Demo) triggers the Privy login modal if unauthenticated.
+4. **Blockchain Execution**: Clicking "Já Paguei" triggers the `lockFunds` function. The amount in Fiat (BRL/USD/EUR) is automatically converted to XLM based on current market rates.
+5. **Webhook Notification**: Upon successful locking, the frontend submits the full reservation payload to the backend webhook (`/api/receive-reservation`) to finalize the booking.
+6. **Success Screen**: The user is presented with a confirmation and a link to view their immutable transaction on Stellar Expert.
 
 ---
 
 ## Environment Variables
 
-> **File:** `frontend/.env`
-
-| Variable | Visibility | Description |
-|---|---|---|
-| `NEXT_PUBLIC_BACKEND_URL` | Public | Base URL for direct backend calls (e.g., funding) |
-| `NEXT_PUBLIC_STELLAR_NETWORK` | Public | Stellar network (`TESTNET` or `PUBLIC`) |
-| `NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE` | Public | Network Passphrase (e.g., `Test SDF Network ; September 2015`) |
-| `NEXT_PUBLIC_STELLAR_RPC_URL` | Public | Soroban RPC endpoint |
-| `NEXT_PUBLIC_SOROBAN_CONTRACT_ID` | Public | Deployed Soroban Escrow contract address |
-| `NEXT_PUBLIC_USDC_CONTRACT_ID` | Public | Stellar Asset Contract (SAC) address for the USDC token |
-| `NEXT_PUBLIC_PRIVY_APP_ID` | Public | Privy App ID (from dashboard.privy.io) |
-| `BITTRAVELS_API_KEY` | **Server-only** | Shared secret injected by Edge Middleware |
-| `API_URL` | **Server-only** | Internal backend URL for the Next.js proxy rewrite |
-
-> Variables without the `NEXT_PUBLIC_` prefix are **never** exposed to the browser.
-
----
-
-## API Proxy & Backend Communication
-
-All `/api/*` calls from the browser are proxied to the backend via the `rewrites` config in `next.config.js`:
-
-```js
-{ source: '/api/:path*', destination: `${API_URL}/api/:path*` }
-```
-
-This means the browser always calls its own origin (`/api/...`), and Next.js transparently forwards the request to the backend with the injected API key — the actual backend URL is never revealed to the client.
-
-The only direct (non-proxied) call is `POST /api/funding`, which uses `NEXT_PUBLIC_BACKEND_URL` to hit the funding endpoint.
-
----
-
-## Dependencies
-
-| Package | Version | Purpose |
-|---|---|---|
-| `next` | 14.2.5 | App Router framework |
-| `react` / `react-dom` | ^18.3.1 | UI library |
-| `@privy-io/react-auth` | ^3.32.2 | Auth + Stellar embedded wallets |
-| `framer-motion` | ^11.3.19 | Animations and transitions |
-| `lucide-react` | ^0.427.0 | Icon library |
-| `tailwindcss` | ^3.4.7 | Utility-first CSS |
-| `typescript` | ^5.5.4 | Type safety |
+Required variables in `.env`:
+- `NEXT_PUBLIC_STELLAR_NETWORK`: Network (e.g., `TESTNET`)
+- `NEXT_PUBLIC_STELLAR_RPC_URL`: Soroban RPC endpoint
+- `NEXT_PUBLIC_SOROBAN_CONTRACT_ID`: The deployed Escrow Contract ID
+- `NEXT_PUBLIC_USDC_CONTRACT_ID`: The token contract ID (Native XLM SAC)
+- `NEXT_PUBLIC_PRIVY_APP_ID`: Your Privy application ID for authentication
+- `NEXT_PUBLIC_BACKEND_URL`: URL of the Node.js backend (default: `http://localhost:5000`)
 
 ---
 
 ## Running Locally
 
-```bash
-# From the project root
-cd frontend
-
-# Install dependencies
-npm install
-
-# Configure environment
-cp .env.example .env
-# Fill in NEXT_PUBLIC_PRIVY_APP_ID and other required values
-
-# Start the development server
-npm run dev
-# → http://localhost:3000
-```
-
-> The backend must also be running on port 5000 for API calls to succeed. See [backend documentation](./backend.md).
+1. Install dependencies: `npm install`
+2. Create `.env` based on `.env.example`.
+3. Start the dev server: `npm run dev`
+4. Open `http://localhost:3000` in your browser.

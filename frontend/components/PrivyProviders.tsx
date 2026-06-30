@@ -16,8 +16,9 @@ export default function PrivyProviders({ children }: { children: ReactNode }) {
           accentColor: '#676FFF',
         },
         // Auto-create embedded wallet on every login — required for signing Soroban txs
+        // 'all-users' ensures existing accounts also get a wallet created
         embeddedWallets: {
-          createOnLogin: 'users-without-wallets',
+          createOnLogin: 'all-users',
         },
       }}
     >

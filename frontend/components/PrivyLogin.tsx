@@ -1,37 +1,24 @@
 'use client';
 
 import { usePrivy } from '@privy-io/react-auth';
-import { useCreateWallet } from '@privy-io/react-auth/extended-chains';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useLocalStellarWallet } from '@/hooks/useLocalStellarWallet';
 
 export default function PrivyLogin() {
   const { ready, authenticated, login, logout, user } = usePrivy();
-  const { createWallet } = useCreateWallet();
   const [fundingStatus, setFundingStatus] = useState<string>('');
   
-  // Encontra a carteira Stellar, se houver
-  const stellarWallet: any = user?.linkedAccounts.find(
-    (account) => account.type === 'wallet' && (account as any).chainType === 'stellar'
-  );
-
-  useEffect(() => {
-    // Se está logado, mas não tem carteira Stellar criada, cria uma automaticamente
-    if (ready && authenticated && user && !stellarWallet) {
-      createWallet({ chainType: 'stellar' as any }).catch((err) => {
-        console.error('Erro ao criar carteira Stellar:', err);
-      });
-    }
-  }, [ready, authenticated, user, stellarWallet, createWallet]);
+  const { publicKey } = useLocalStellarWallet();
 
   const requestFunding = async () => {
-    if (!stellarWallet) return;
+    if (!publicKey) return;
     
     setFundingStatus('Solicitando fundos...');
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/funding`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: stellarWallet.address }),
+        body: JSON.stringify({ address: publicKey }),
       });
       
       if (response.ok) {
@@ -60,18 +47,18 @@ export default function PrivyLogin() {
         </button>
       ) : (
         <div className="flex flex-col gap-3">
-          <p className="text-sm">Logado como: <strong>{user?.email?.address}</strong></p>
+          <p className="text-sm">Logado como: <strong>{user?.email?.address || 'Usuário'}</strong></p>
           
-          {stellarWallet ? (
+          {publicKey ? (
             <div className="p-3 bg-gray-50 rounded border text-sm break-all">
-              <strong>Endereço Stellar:</strong><br />
-              {stellarWallet.address}
+              <strong>Endereço Stellar Local:</strong><br />
+              {publicKey}
             </div>
           ) : (
-            <p className="text-sm text-gray-500 italic">Gerando carteira Stellar...</p>
+            <p className="text-sm text-gray-500 italic">Gerando carteira Stellar local...</p>
           )}
 
-          {stellarWallet && (
+          {publicKey && (
             <button 
               onClick={requestFunding}
               className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition mt-2"
@@ -93,3 +80,4 @@ export default function PrivyLogin() {
     </div>
   );
 }
+

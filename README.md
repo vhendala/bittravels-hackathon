@@ -20,9 +20,9 @@ Choosing the Stellar ecosystem to build Bit Travels was no accident. We leverage
 
 Our repository is organized as a Monorepo that consolidates the three pillars of our application:
 
-- 📂 `/frontend`: The main application built with Next.js/React. It contains the user interface for flight search, the Privy authentication flow, and the payment screen that sequentially approves and locks USDC into the Soroban Escrow. All blockchain complexity is abstracted in this layer through our `useEscrow` hook.
-- 📂 `/backend`: Our Node.js API that acts as the **Mocked Oracle**. This service simulates the role of a travel consolidator. When triggered, it confirms the ticket "issuance" and signs the transaction using its securely held private key, invoking the `release_funds` function on the blockchain to send the USDC to the travel agency.
-- 📂 `/soroban-escrow`: The actual Smart Contract, written in Rust and optimized for the Stellar network. It contains the fundamental logic functions: `lock_funds` (to lock USDC in a non-custodial way) and `release_funds` (to unlock the funds upon authorization from the oracle).
+- 📂 `/frontend`: The main application built with Next.js/React. It contains the user interface for flight search, the Privy authentication flow, and the payment screen that sequentially approves and locks Native XLM into the Soroban Escrow. All blockchain complexity is abstracted in this layer through our `useEscrow` hook.
+- 📂 `/backend`: Our Node.js API that acts as the **Mocked Oracle**. This service simulates the role of a travel consolidator. When triggered, it confirms the ticket "issuance" and signs the transaction using its securely held private key, invoking the `release_funds` function on the blockchain to send the locked XLM to the travel agency.
+- 📂 `/soroban-escrow`: The actual Smart Contract, written in Rust and optimized for the Stellar network. It contains the fundamental logic functions: `lock_funds` (to lock XLM in a non-custodial way) and `release_funds` (to unlock the funds upon authorization from the oracle).
 
 ## 🎬 The Demo Flow (Happy Path)
 
@@ -31,7 +31,7 @@ Follow these steps to experience the full journey of our prototype:
 1. **Flight Selection:** On the frontend, select the desired flight and proceed to checkout.
 2. **Authentication:** The user logs in seamlessly using Privy (Google/Email).
 3. **Escrow Lock (Web3):** When the user clicks to pay via "PIX", the frontend transparently:
-   - Requests approval to move USDC (`approve`).
+   - Requests approval to move XLM (`approve`).
    - Locks the funds into the smart contract (`lock_funds`).
    - The user signs these transactions safely via the Privy Embedded Wallet.
 4. **Non-Custodial Proof:** The interface displays the transaction hash linking to **Stellar Expert**, proving on-chain that the funds are secure and locked in the Escrow, inaccessible until the service is provided.

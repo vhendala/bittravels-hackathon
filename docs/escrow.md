@@ -1,140 +1,110 @@
 # Bit Travels — Soroban Escrow
 
-Este documento resume a arquitetura, implementação e fluxo do contrato inteligente de Escrow desenvolvido para a plataforma Bit Travels na rede Stellar (Soroban).
+This document summarizes the architecture, implementation, and flow of the Escrow smart contract developed for the Bit Travels platform on the Stellar network (Soroban).
 
 ---
 
-## 1. Visão Geral
+## 1. Overview
 
-O **Bit Travels Escrow Contract** é um contrato inteligente (smart contract) escrito em Rust usando o `soroban-sdk`. Ele atua como um intermediário de confiança (escrow) no processo de compra de passagens, garantindo a liquidação programável e segura entre o **cliente** e a **agência de viagens**.
+The **Bit Travels Escrow Contract** is a smart contract written in Rust using the `soroban-sdk`. It acts as a trustless intermediary (escrow) in the ticket purchasing process, ensuring a secure, programmable settlement between the **client** and the **travel agency**.
 
-O contrato retém os fundos (em USDC ou outra stablecoin suportada pelo Stellar Asset Contract - SAC) até que a emissão da passagem seja confirmada pelo backend da Bit Travels (o "Oráculo").
+The contract retains the funds (currently configured to use Native XLM via the Stellar Asset Contract - SAC) until the ticket issuance is confirmed by the Bit Travels backend (the "Oracle").
 
 ---
 
-## 2. Arquitetura e Fluxo
+## 2. Architecture and Flow
 
 ```mermaid
 sequenceDiagram
-    participant Cliente as Cliente (Privy MPC)
-    participant Contrato as Soroban Escrow (USDC)
-    participant Backend as Backend (Oráculo)
-    participant Agencia as Agência de Viagens
+    participant Client as Client (Privy MPC)
+    participant Contract as Soroban Escrow
+    participant Backend as Backend (Oracle)
+    participant Agency as Travel Agency
 
-    Cliente->>Contrato: 1. Aprova uso de fundos (token.approve)
-    Cliente->>Contrato: 2. Chama lock_funds() (Assinado via Privy)
-    Contrato-->>Contrato: USDC transferido e retido
-    Contrato-->>Backend: Evento: funds_locked
-    Backend-->>Backend: Comunica GDS/Companhia Aérea
-    Backend->>Contrato: 3. Chama release_funds() (Assinado pelo Oráculo)
-    Contrato->>Agencia: USDC transferido
-    Contrato-->>Backend: Evento: funds_released
+    Client->>Contract: 1. Approves fund usage (token.approve)
+    Client->>Contract: 2. Calls lock_funds() (Signed via Privy)
+    Contract-->>Contract: XLM transferred and locked
+    Contract-->>Backend: HTTP Webhook Payload Sent (Frontend)
+    Backend-->>Backend: Communicates with GDS/Airline
+    Backend->>Contract: 3. Calls release_funds() (Signed by Oracle)
+    Contract->>Agency: XLM transferred
 ```
 
----
-
-## 3. Características do Contrato (`soroban-escrow/src/lib.rs`)
-
-### Tipo `Reservation` (Estado)
-Armazena os dados persistentes de cada reserva, associados a um `booking_id` único (Symbol):
-- `client`: `Address` (Endereço Stellar do cliente gerado via Privy).
-- `amount`: `i128` (Valor em stroops, 7 casas decimais para USDC).
-- `is_locked`: `bool` (Verdadeiro após `lock_funds`).
-- `is_released`: `bool` (Verdadeiro após `release_funds`).
-- `is_refunded`: `bool` (Verdadeiro após `refund`).
-
-### Funções Principais
-
-1. **`__constructor(env, oracle, token)`**
-   - Executada apenas **uma vez** no momento do deploy (padrão Protocol 22).
-   - Define o endereço do Oráculo (o backend da Bit Travels) e o token aceito (ex: contrato SAC do USDC).
-   - Estes valores ficam armazenados no estado da instância (`Instance Storage`), não podendo ser alterados.
-
-2. **`lock_funds(env, booking_id, client, amount)`**
-   - **Autorização:** Exige a assinatura do **cliente** (`client.require_auth()`), garantida no frontend via Privy MPC. Ninguém pode travar fundos de terceiros.
-   - Puxa os fundos do cliente para o contrato usando a interface padrão de Token do Soroban (`token.transfer`).
-   - Salva o estado da reserva (`Persistent Storage`) com um TTL estendido (aprox. 30 dias) para evitar arquivamento durante o fluxo da viagem.
-   - Emite o evento `funds_locked`.
-
-3. **`release_funds(env, booking_id, agency)`**
-   - **Autorização:** Exige a assinatura exclusiva do **Oráculo** (`oracle.require_auth()`). Apenas o backend oficial da Bit Travels pode liberar os fundos após confirmar a emissão do bilhete (e-ticket).
-   - Transfere o valor do contrato para a conta da agência recebedora.
-   - Emite o evento `funds_released`.
-   - Possui proteções contra "dupla liberação" (double-release) e liberação de reservas já reembolsadas.
-
-4. **`refund(env, booking_id)`**
-   - **Autorização:** Exige a assinatura do **cliente** (`client.require_auth()`). O Oráculo não pode roubar fundos chamando refund.
-   - Mecanismo de resolução de disputas: caso a passagem não seja emitida e o Oráculo nunca chame `release_funds`, o cliente pode solicitar o estorno do valor de volta para sua carteira.
-   - Emite o evento `funds_refunded`.
-
-### View Functions (Somente Leitura)
-- **`get_reservation(env, booking_id)`**: Retorna o estado completo da reserva.
-- **`get_oracle(env)`**: Retorna o endereço do oráculo configurado.
-- **`get_token(env)`**: Retorna o endereço do token configurado.
+### Key Participants
+- **Client (`buyer`)**: The traveler purchasing the ticket. They sign the transaction via the Privy embedded wallet to lock the funds.
+- **Oracle (`oracle`)**: The Bit Travels backend service. It is authorized by the contract to trigger the release of funds once the real-world service is fulfilled.
+- **Agency (`agency`)**: The final recipient of the funds after the ticket is successfully issued.
 
 ---
 
-## 4. Pilares de Segurança
+## 3. Core Functions
 
-- **Separação de Privilégios:** O Oráculo libera (`release`), mas o Cliente trava (`lock`) e reembolsa (`refund`). Nenhuma das partes pode executar a ação da outra unilateralmente de forma maliciosa.
-- **Imutabilidade de Configuração:** O Oráculo e o Token são definidos em tempo de deploy no construtor. Não há portas giratórias ou chaves de administrador que possam alterá-los posteriormente.
-- **Proteção contra Reentrância e Race Conditions:** Os estados booleanos (`is_released`, `is_refunded`, `is_locked`) e a checagem no `Persistent Storage` previnem que `lock_funds`, `release_funds` ou `refund` sejam chamados mais de uma vez para o mesmo ID.
-- **Isolamento de Chaves:** O backend (`oracle`) usa uma secret key que nunca é exposta. O cliente assina transações na web via Privy MPC (o backend não conhece a chave do cliente).
+The contract exposes two primary state-mutating functions:
 
----
+### `lock_funds`
+Locks a specific amount of tokens from the buyer into the contract.
 
-## 5. Estrutura do Projeto Soroban
+**Parameters:**
+- `env`: The execution environment.
+- `booking_id` (String): A unique identifier for the reservation.
+- `buyer` (Address): The Stellar address of the client.
+- `amount` (i128): The amount of tokens to lock (in stroops).
 
-A pasta `soroban-escrow/` contém:
-- **`Cargo.toml`**: Configurado com `soroban-sdk = "22.0.6"` e otimizações de release para diminuir o tamanho do WASM (`opt-level = "z"`, `strip = "symbols"`), mantendo a checagem de overflow ativa para segurança.
-- **`src/lib.rs`**: O código completo do contrato inteligente, os tipos, os erros customizados (`EscrowError`) e 8 testes unitários que cobrem 100% dos caminhos felizes e todos os caminhos de erro esperados.
-- **`README.md`**: Instruções passo-a-passo para build (`stellar contract build`), deploy para a Testnet (`stellar contract deploy`) via CLI e documentação para interações manuais (`stellar contract invoke`).
+**Process:**
+1. Verifies the buyer's cryptographic signature (`buyer.require_auth()`).
+2. Checks if the `booking_id` is already locked to prevent duplicates.
+3. Transfers the tokens from the `buyer` to the contract itself using the Token Client.
+4. Stores the escrow state (`EscrowRecord`) tied to the `booking_id`.
 
-### Deploy na Testnet
+### `release_funds`
+Releases the previously locked funds to the predefined travel agency.
 
-O contrato foi compilado (utilizando o toolchain GNU Rust para evitar dependências MSVC) e feito o deploy com sucesso na rede Stellar Testnet:
-- **Contract ID:** `CAA7ONVD3TNCRNBIOQXPJWGJIWCKWSNG5XX7FZEYA6R6V4CWP3G7XCYF`
-- **Wasm Hash:** `f5f20f5a4bfea19be66b48baecada7fea9b1988a66fb8413781bec53b6450cc9`
+**Parameters:**
+- `env`: The execution environment.
+- `booking_id` (String): The unique identifier of the reservation to settle.
 
-O Oráculo e a conta da agência (para fins de teste) também foram gerados e configurados no backend.
-
----
-
-## 6. Integração Frontend (Web3)
-
-A interface se comunica com o contrato Soroban através do hook customizado **`useEscrow`** (`frontend/hooks/useEscrow.ts`). 
-
-### Dependências e Ferramentas
-- `@stellar/stellar-sdk`: Utilizado para construção do XDR da transação (`TransactionBuilder`), empacotamento dos argumentos no formato `ScVal` e comunicação com o nó RPC.
-- `@privy-io/react-auth`: Provedor de Embedded Wallets baseado em MPC. Responsável por armazenar as chaves de forma não-custodial e fornecer o método `user.signTransaction`.
-
-### Ciclo de Vida do Pagamento (Frontend)
-Para garantir maior flexibilidade com o SAC (Stellar Asset Contract) e suporte a carteiras modulares, a operação do cliente é dividida em dois passos transacionais, estritamente sequenciais e validados:
-
-1. **Passo 1 — Autorização (Approve):**
-   - O `useEscrow` calcula a expiração (`expirationLedger = sequence + 1000`) e invoca a função `approve` do contrato inteligente do Token (USDC).
-   - Isso concede permissão temporária (allowance) ao Escrow para reter os fundos do cliente.
-   - O usuário assina essa transação via Privy e o sistema aguarda sua confirmação em cadeia (pooling).
-
-2. **Passo 2 — Retenção (Lock Funds):**
-   - Caso a Etapa 1 obtenha sucesso na rede, o hook avança, recarregando o state (Sequence Number) da conta.
-   - Uma nova chamada é montada e enviada invocando `lock_funds` dentro do contrato do Escrow.
-   - O usuário assina a retenção final.
-
-3. **Confirmação Backend:**
-   - Apenas com as duas etapas confirmadas na rede Soroban, o hook notifica o webhook do servidor (`/api/receive-reservation`) para registrar a reserva oficialmente.
+**Process:**
+1. Verifies the Oracle's cryptographic signature (`oracle.require_auth()`).
+2. Retrieves the `EscrowRecord` for the given `booking_id`.
+3. Verifies that the funds have not already been released.
+4. Transfers the tokens from the contract to the `agency`.
+5. Updates the state to mark the reservation as released, preventing double-spending.
 
 ---
 
-## 7. Integração Backend (Oráculo)
+## 4. Contract Initialization
 
-O backend atua como o **Oráculo** do sistema. Ele é responsável por sinalizar ao contrato que a passagem foi devidamente emitida e liberar os fundos para a agência. A lógica está isolada em `backend/src/services/soroban.ts`.
+Before the contract can be used, it must be initialized exactly once. This sets up the immutable configuration parameters.
 
-### Fluxo do Oráculo
-1. **Gatilho Operacional:** A agência emite o bilhete. Um admin ou sistema automatizado dispara um POST para a nova rota `/api/bookings/confirm/:bookingId`.
-2. **Serviço de Assinatura:** O serviço `releaseFundsToAgency(bookingId)` é acionado. Ele utiliza a `ORACLE_SECRET_KEY` configurada no ambiente para criar um Keypair nativo do `stellar-sdk`.
-3. **Simulação & Assinatura:**
-   - Prepara a chamada para `release_funds(bookingId, agencyAddress)`.
-   - Realiza a **Simulação RPC** obrigatória do Soroban para calcular recursos/custos exatos.
-   - Monta e assina a transação localmente e com total sigilo usando a chave privada da empresa.
-4. **Submissão & Conclusão:** O backend submete a XDR na rede (Testnet/Mainnet), realiza o pooling aguardando o processamento do Ledger e, após `SUCCESS`, responde a requisição original com o `txHash`. O contrato Soroban encerra o ciclo transferindo o USDC para a agência.
+### `initialize`
+**Parameters:**
+- `oracle` (Address): The address authorized to release funds.
+- `agency` (Address): The destination address for the funds.
+- `token` (Address): The address of the Token Contract (SAC). For this project, we utilize the Native XLM SAC.
+
+---
+
+## 5. Security Measures
+
+- **Authentication (`require_auth`)**: Every sensitive action requires explicit cryptographic authorization from the appropriate party. The buyer must authorize locking, and the oracle must authorize releasing.
+- **State Protection**: The contract verifies state transitions (e.g., ensuring a booking isn't locked twice or released twice).
+- **Non-Custodial Design**: The backend/Oracle never has direct access to the user's funds. It only has the authority to release them to the hardcoded agency address.
+
+---
+
+## 6. Deployment (Testnet)
+
+To deploy or upgrade the contract on the Stellar Testnet:
+
+1. Compile the Rust code to WASM:
+   ```bash
+   stellar contract build
+   ```
+2. Deploy to the network:
+   ```bash
+   stellar contract deploy \
+     --wasm target/wasm32-unknown-unknown/release/soroban_escrow.wasm \
+     --source <DEPLOYER_SECRET> \
+     --network testnet
+   ```
+3. Initialize the contract using `stellar contract invoke`.
