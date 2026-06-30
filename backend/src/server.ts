@@ -25,18 +25,35 @@ app.set('trust proxy', 1);
 // Segurança de Headers HTTP (Proteção contra Cross-Site Scripting, Sniffing, etc)
 app.use(helmet());
 
-// CORS estrito: apenas o domínio oficial em produção, +localhost em dev, e o frontend Vercel se configurado
-const allowedOrigins = [
+// CORS dinâmico: aceita domínios explícitos + qualquer subdomínio *.vercel.app (previews de deploy)
+// e o domínio configurado via variável de ambiente FRONTEND_URL
+const ALLOWED_ORIGINS_STATIC = [
     'https://bittravels.com.br',
     'https://www.bittravels.com.br',
-    process.env.FRONTEND_URL, // Variável para a URL do Vercel
-    ...(!IS_PRODUCTION ? ['http://localhost:3000'] : []),
-].filter(Boolean) as string[]; // Remove undefined values
+    ...(!IS_PRODUCTION ? ['http://localhost:3000', 'http://localhost:3001'] : []),
+];
 
 app.use(cors({
-    origin: allowedOrigins,
-    // credentials: false (padrão) — o frontend não usa cookies cross-origin,
-    // não há necessidade de expor esse vetor de ataque
+    origin: (origin, callback) => {
+        // Requisições sem Origin (server-to-server, Render health checks, Postman) → liberar
+        if (!origin) return callback(null, true);
+
+        const frontendUrl = process.env.FRONTEND_URL;
+
+        // Aceita o domínio explícito configurado na variável de ambiente
+        if (frontendUrl && origin === frontendUrl) return callback(null, true);
+
+        // Aceita qualquer preview/deploy do Vercel (*.vercel.app)
+        if (origin.endsWith('.vercel.app')) return callback(null, true);
+
+        // Aceita origens estáticas permitidas
+        if (ALLOWED_ORIGINS_STATIC.includes(origin)) return callback(null, true);
+
+        // Bloqueia todo o resto
+        console.warn(`🛑 [CORS] Origem bloqueada: ${origin}`);
+        callback(new Error(`CORS: origem não permitida — ${origin}`));
+    },
+    optionsSuccessStatus: 200,
 }));
 
 // Limite de payload explícito para mitigar ataques de payload gigante
