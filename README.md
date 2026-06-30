@@ -18,13 +18,21 @@ In the international travel market, consolidators, tour operators, and travel ag
 **The Solution:** **Bit Travels** acts as a secure settlement layer designed specifically for the travel industry supply chain. By utilizing programmable payments through **Soroban Escrow** on the Stellar network, we have created a non-custodial architecture that protects all parties involved.
 The funds paid by the traveler are safely locked in a smart contract. The release of these funds to the supply chain occurs automatically only after proof that the actual service (such as e-ticket issuance) has been successfully completed. This ensures a reduction in risk exposure for operators and guaranteed security for the buyer.
 
-## 🚀 Why Stellar & Soroban?
+## 🌟 Stellar & Web3 Integrations Showcase
 
-Choosing the Stellar ecosystem to build Bit Travels was no accident. We leverage the network's key advantages to create a seamless user experience:
+Our project is deeply integrated with the Stellar ecosystem, utilizing cutting-edge Web3 technologies to solve real-world problems in the travel industry. Here are the core integrations:
 
-- **Seamless Account Abstraction (Privy MPC):** The end customer doesn't need to know what a crypto wallet, seed phrase, or gas fees are. Our infrastructure uses **Privy** Embedded Wallets to create secure, non-custodial wallets linked to the user's social login or email, offering a familiar Web2 experience with Web3 security.
-- **Efficient Smart Contracts (Soroban):** Our Escrow and conditional release logic requires deterministic, fast execution with predictable fees. Soroban provides the perfect environment, written in Rust, to create secure, low-cost contracts.
-- **Low Transaction Costs:** The travel market operates on tight margins. The fractions of a cent charged by the Stellar network make microtransactions and programmable payments viable without compromising business profitability.
+### 1. Seamless Account Abstraction with Privy
+We integrated **Privy Embedded Wallets** to completely abstract the blockchain complexity for the end user. Travelers log in using familiar Web2 methods (Google, Email) while a secure, non-custodial Stellar wallet is generated in the background. 
+* **The Impact:** No seed phrases, no extensions, and no friction. Users sign Soroban transactions naturally as part of their checkout flow, bringing Web3 security with a pure Web2 user experience.
+
+### 2. Trustless Work via Soroban Escrow
+At the heart of Bit Travels is our custom **Soroban Smart Contract** written in Rust. We implemented a conditional escrow system that locks the traveler's XLM/USDC upon purchase. 
+* **The Impact:** This creates a **Trustless Work** environment for the supply chain. The travel agency is guaranteed to receive the funds, but the funds are only released from the contract *after* the backend Oracle confirms that the e-ticket has been successfully issued. This eliminates chargeback fraud and protects both buyer and seller.
+
+### 3. The Stellar Network Advantage
+We chose the Stellar network as our settlement layer because the travel market operates on extremely tight margins. 
+* **The Impact:** Stellar's fractional transaction costs and high-speed finality make programmable microtransactions viable. We leverage Native XLM (and soon SAC bridged stablecoins) to settle international travel packages instantly across borders.
 
 ## 🏗️ Project Architecture
 
