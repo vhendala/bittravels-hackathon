@@ -314,13 +314,14 @@ export default function CheckoutPage() {
         return passengersValid && contactValid && paymentValid;
     };
 
-    const generateBookingId = () => {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let id = 'BT';
-        for (let i = 0; i < 4; i++) {
-            id += chars.charAt(Math.floor(Math.random() * chars.length));
+    const generatePNR = () => {
+        // Standard airline PNR: 6 alphanumeric characters (excluding 0, 1, O, I for clarity)
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let pnr = '';
+        for (let i = 0; i < 6; i++) {
+            pnr += chars.charAt(Math.floor(Math.random() * chars.length));
         }
-        return id;
+        return pnr;
     };
 
     const buildWebhookPayload = (bookingIdStr: string) => {
@@ -400,7 +401,7 @@ export default function CheckoutPage() {
         setError('');
 
         try {
-            const newBookingId = generateBookingId();
+            const newBookingId = generatePNR();
 
             const payload = buildWebhookPayload(newBookingId);
             console.log('Payload sendo enviado:', payload);
@@ -420,7 +421,17 @@ export default function CheckoutPage() {
 
             setBookingId(newBookingId);
             setIsSuccess(true);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // For Web2 payments, also redirect to ticket
+            const ticketPayload = payload;
+            (ticketPayload.payment as any).total_paid = calculatePricing().total;
+            (ticketPayload.payment as any).currency = selectedFlight?.price?.currency || 'BRL';
+            (ticketPayload.flight as any).airline = selectedFlight?.itineraries?.[0]?.segments?.[0]?.carrierCode || 'Airline';
+            (ticketPayload.flight as any).flightNumber = selectedFlight?.itineraries?.[0]?.segments?.[0]?.number || 'Flight 123';
+            
+            sessionStorage.setItem('bittravels_ticket', JSON.stringify(ticketPayload));
+            router.push('/ticket');
+            
         } catch (err) {
             setError('Erro ao processar sua reserva. Por favor, tente novamente.');
             console.error('Erro na requisição:', err);
@@ -589,7 +600,7 @@ export default function CheckoutPage() {
                                             setEscrowStatus('locking');
                                         }, 3500); // approximate time for approve polling
 
-                                        const finalBookingId = bookingId || `BT${Date.now()}`;
+                                        const finalBookingId = bookingId || generatePNR();
                                         const result = await lockFunds(amountInStroops, finalBookingId);
 
                                         clearTimeout(lockingTimer);
@@ -606,7 +617,18 @@ export default function CheckoutPage() {
                                                     throw new Error('Erro ao avisar o servidor');
                                                 }
                                                 setEscrowStatus('success');
-                                                showToast('Fundos travados no contrato! Sua reserva está confirmada.');
+                                                
+                                                // Prepare and save ticket data
+                                                const ticketPayload = buildWebhookPayload(finalBookingId);
+                                                (ticketPayload.payment as any).total_paid = pixTotal;
+                                                (ticketPayload.payment as any).currency = currency;
+                                                (ticketPayload.flight as any).airline = selectedFlight?.itineraries?.[0]?.segments?.[0]?.carrierCode || 'Airline';
+                                                (ticketPayload.flight as any).flightNumber = selectedFlight?.itineraries?.[0]?.segments?.[0]?.number || 'Flight 123';
+                                                
+                                                sessionStorage.setItem('bittravels_ticket', JSON.stringify(ticketPayload));
+                                                
+                                                // Redirect to ticket page
+                                                router.push('/ticket');
                                             } catch (e) {
                                                 setEscrowStatus('error');
                                                 setEscrowError('Transação aprovada na rede, mas houve erro ao avisar o servidor.');
