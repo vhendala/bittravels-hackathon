@@ -1,6 +1,16 @@
 # 🌍 Bit Travels
 > **Secure, programmable settlement infrastructure for the global travel ecosystem.**
 
+---
+
+## 📎 Project Resources
+
+| Resource | Link |
+|---|---|
+| 🎤 **Pitch Deck & Validation Interviews** | [View on Google Drive](https://drive.google.com/drive/folders/1EJiYNB5F2q1aZz1WX1BrDjrW7rKRjd_W?usp=sharing) |
+
+---
+
 ## 🎯 The Problem and the Solution
 
 In the international travel market, consolidators, tour operators, and travel agencies face a complex landscape: high payment processing fees, exposure to fraud, chargeback risks, and cash flow that is often trapped between the sale to the end customer and the settlement with suppliers.
