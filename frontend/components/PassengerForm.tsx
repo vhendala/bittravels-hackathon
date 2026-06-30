@@ -30,18 +30,18 @@ const countries = [
 
 const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
 const months = [
-    { value: '01', label: 'Janeiro' },
-    { value: '02', label: 'Fevereiro' },
-    { value: '03', label: 'Março' },
-    { value: '04', label: 'Abril' },
-    { value: '05', label: 'Maio' },
-    { value: '06', label: 'Junho' },
-    { value: '07', label: 'Julho' },
-    { value: '08', label: 'Agosto' },
-    { value: '09', label: 'Setembro' },
-    { value: '10', label: 'Outubro' },
-    { value: '11', label: 'Novembro' },
-    { value: '12', label: 'Dezembro' },
+    { value: '01', key: 'passenger.month.jan' },
+    { value: '02', key: 'passenger.month.feb' },
+    { value: '03', key: 'passenger.month.mar' },
+    { value: '04', key: 'passenger.month.apr' },
+    { value: '05', key: 'passenger.month.may' },
+    { value: '06', key: 'passenger.month.jun' },
+    { value: '07', key: 'passenger.month.jul' },
+    { value: '08', key: 'passenger.month.aug' },
+    { value: '09', key: 'passenger.month.sep' },
+    { value: '10', key: 'passenger.month.oct' },
+    { value: '11', key: 'passenger.month.nov' },
+    { value: '12', key: 'passenger.month.dec' },
 ];
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 100 }, (_, i) => (currentYear - i).toString());
@@ -117,17 +117,17 @@ export default function PassengerForm({ type, index, data, onChange }: Passenger
                 {/* País de residência */}
                 <div>
                     <label className="block text-gray-700 font-semibold mb-2">
-                        País de residência
+                        {t('passenger.country')}
                     </label>
                     <select
                         value={data.country}
                         onChange={(e) => handleChange('country', e.target.value)}
                         className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                     >
-                        <option value="">Selecione o país</option>
+                        <option value="">{t('passenger.selectCountry')}</option>
                         {countries.map((country) => (
                             <option key={country} value={country}>
-                                {country}
+                                {t(`country.${country.toLowerCase()}`)}
                             </option>
                         ))}
                     </select>
@@ -136,7 +136,7 @@ export default function PassengerForm({ type, index, data, onChange }: Passenger
                 {/* Tipo de documento */}
                 <div>
                     <label className="block text-gray-700 font-semibold mb-2">
-                        Tipo de documento
+                        {t('passenger.documentType')}
                     </label>
                     {isBrazil ? (
                         <select
@@ -144,7 +144,7 @@ export default function PassengerForm({ type, index, data, onChange }: Passenger
                             onChange={(e) => handleChange('documentType', e.target.value as any)}
                             className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                         >
-                            <option value="">Selecione o tipo</option>
+                            <option value="">{t('passenger.selectDocument')}</option>
                             {documentOptions.map((doc) => (
                                 <option key={doc} value={doc}>
                                     {doc}
@@ -155,7 +155,7 @@ export default function PassengerForm({ type, index, data, onChange }: Passenger
                         <div className="w-full px-4 py-3 bg-primary/5 border border-primary/20 rounded-xl">
                             <p className="text-primary font-bold text-sm">PASSAPORTE</p>
                             <p className="text-gray-500 text-xs mt-1">
-                                Obrigatório para passageiros residentes fora do Brasil
+                                {t('passenger.passportRequired')}
                             </p>
                         </div>
                     )}
@@ -164,7 +164,7 @@ export default function PassengerForm({ type, index, data, onChange }: Passenger
                 {/* Número do documento */}
                 <div className="md:col-span-2">
                     <label className="block text-gray-700 font-semibold mb-2">
-                        {data.documentType || 'Documento'}
+                        {data.documentType || t('passenger.document')}
                     </label>
                     <input
                         type="text"
@@ -177,17 +177,17 @@ export default function PassengerForm({ type, index, data, onChange }: Passenger
                 {/* Data de nascimento */}
                 <div className="md:col-span-2">
                     <label className="block text-gray-700 font-semibold mb-2">
-                        Data de nascimento
+                        {t('passenger.birthDate')}
                     </label>
                     <div className="grid grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-gray-500 text-xs mb-1">Dia</label>
+                            <label className="block text-gray-500 text-xs mb-1">{t('passenger.day')}</label>
                             <select
                                 value={data.birthDay}
                                 onChange={(e) => handleChange('birthDay', e.target.value)}
                                 className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                             >
-                                <option value="">Dia</option>
+                                <option value="">{t('passenger.day')}</option>
                                 {days.map((day) => (
                                     <option key={day} value={day}>
                                         {day}
@@ -196,28 +196,28 @@ export default function PassengerForm({ type, index, data, onChange }: Passenger
                             </select>
                         </div>
                         <div>
-                            <label className="block text-gray-500 text-xs mb-1">Mês</label>
+                            <label className="block text-gray-500 text-xs mb-1">{t('passenger.month')}</label>
                             <select
                                 value={data.birthMonth}
                                 onChange={(e) => handleChange('birthMonth', e.target.value)}
                                 className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                             >
-                                <option value="">Mês</option>
+                                <option value="">{t('passenger.month')}</option>
                                 {months.map((month) => (
                                     <option key={month.value} value={month.value}>
-                                        {month.label}
+                                        {t(month.key)}
                                     </option>
                                 ))}
                             </select>
                         </div>
                         <div>
-                            <label className="block text-gray-500 text-xs mb-1">Ano</label>
+                            <label className="block text-gray-500 text-xs mb-1">{t('passenger.year')}</label>
                             <select
                                 value={data.birthYear}
                                 onChange={(e) => handleChange('birthYear', e.target.value)}
                                 className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                             >
-                                <option value="">Ano</option>
+                                <option value="">{t('passenger.year')}</option>
                                 {years.map((year) => (
                                     <option key={year} value={year}>
                                         {year}
@@ -231,7 +231,7 @@ export default function PassengerForm({ type, index, data, onChange }: Passenger
                 {/* Sexo */}
                 <div className="md:col-span-2">
                     <label className="block text-gray-700 font-semibold mb-2">
-                        Sexo
+                        {t('passenger.gender')}
                     </label>
                     <div className="flex gap-6">
                         <label className="flex items-center gap-2 cursor-pointer">
@@ -243,7 +243,7 @@ export default function PassengerForm({ type, index, data, onChange }: Passenger
                                 onChange={(e) => handleChange('gender', e.target.value as any)}
                                 className="w-5 h-5 text-primary focus:ring-primary focus:ring-2 border-gray-300"
                             />
-                            <span className="text-gray-700">Feminino</span>
+                            <span className="text-gray-700">{t('passenger.female')}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                             <input
@@ -254,7 +254,7 @@ export default function PassengerForm({ type, index, data, onChange }: Passenger
                                 onChange={(e) => handleChange('gender', e.target.value as any)}
                                 className="w-5 h-5 text-primary focus:ring-primary focus:ring-2 border-gray-300"
                             />
-                            <span className="text-gray-700">Masculino</span>
+                            <span className="text-gray-700">{t('passenger.male')}</span>
                         </label>
                     </div>
                 </div>

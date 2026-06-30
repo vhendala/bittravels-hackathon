@@ -191,9 +191,10 @@ export default function CheckoutPage() {
     };
 
     const formatPrice = (price: string | number) => {
+        const currencyCode = selectedFlight?.price?.currency || 'BRL';
         return new Intl.NumberFormat('pt-BR', {
             style: 'currency',
-            currency: 'BRL',
+            currency: currencyCode,
         }).format(typeof price === 'string' ? parseFloat(price) : price);
     };
 
@@ -430,7 +431,6 @@ export default function CheckoutPage() {
             (ticketPayload.flight as any).flightNumber = selectedFlight?.itineraries?.[0]?.segments?.[0]?.number || 'Flight 123';
             
             sessionStorage.setItem('bittravels_ticket', JSON.stringify(ticketPayload));
-            router.push('/ticket');
             
         } catch (err) {
             setError('Erro ao processar sua reserva. Por favor, tente novamente.');
@@ -480,7 +480,7 @@ export default function CheckoutPage() {
                                 <div>
                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Valor total</p>
                                     <p className="text-3xl font-bold text-[#0C2B54]">
-                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pixTotal)}
+                                        {formatPrice(pixTotal)}
                                     </p>
                                 </div>
                             </div>
@@ -563,6 +563,14 @@ export default function CheckoutPage() {
                                     >
                                         Ver transação no Stellar Expert →
                                     </a>
+                                    
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push('/ticket')}
+                                        className="w-full py-3 mt-2 bg-[#0C2B54] text-white hover:bg-[#0C2B54]/90 font-bold text-base rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+                                    >
+                                        <Plane size={20} /> Obter Bilhete
+                                    </button>
                                 </div>
                             )}
 
@@ -627,8 +635,6 @@ export default function CheckoutPage() {
                                                 
                                                 sessionStorage.setItem('bittravels_ticket', JSON.stringify(ticketPayload));
                                                 
-                                                // Redirect to ticket page
-                                                router.push('/ticket');
                                             } catch (e) {
                                                 setEscrowStatus('error');
                                                 setEscrowError('Transação aprovada na rede, mas houve erro ao avisar o servidor.');
@@ -696,15 +702,25 @@ export default function CheckoutPage() {
                             <p className="text-4xl font-mono font-bold tracking-widest text-primary">{bookingId}</p>
                         </div>
 
-                        <a
-                            href={`https://wa.me/5565999299529?text=${encodeURIComponent(`Olá, preenchi a reserva ${bookingId} no site e desejo realizar o pagamento.`)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full inline-flex justify-center items-center gap-2 px-8 py-4 bg-accent hover:bg-accent/90 text-primary font-bold rounded-xl transition-all shadow-md text-lg"
-                        >
-                            <MessageCircle className="w-6 h-6" />
-                            {t('checkout.talkToSpecialist')}
-                        </a>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                            <a
+                                href={`https://wa.me/5565999299529?text=${encodeURIComponent(`Olá, preenchi a reserva ${bookingId} no site e desejo realizar o pagamento.`)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#00E676] hover:bg-[#00C853] text-white px-8 py-4 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                            >
+                                <MessageCircle className="w-5 h-5" />
+                                {t('checkout.talkToSpecialist')}
+                            </a>
+                            
+                            <button
+                                onClick={() => router.push('/ticket')}
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#0C2B54] hover:bg-[#0C2B54]/90 text-white px-8 py-4 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                            >
+                                <Plane className="w-5 h-5" />
+                                Obter Bilhete
+                            </button>
+                        </div>
                     </div>
                 </main>
             </div>
