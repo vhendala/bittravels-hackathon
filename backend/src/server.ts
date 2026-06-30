@@ -25,12 +25,13 @@ app.set('trust proxy', 1);
 // Segurança de Headers HTTP (Proteção contra Cross-Site Scripting, Sniffing, etc)
 app.use(helmet());
 
-// CORS estrito: apenas o domínio oficial em produção, +localhost em dev
+// CORS estrito: apenas o domínio oficial em produção, +localhost em dev, e o frontend Vercel se configurado
 const allowedOrigins = [
     'https://bittravels.com.br',
     'https://www.bittravels.com.br',
+    process.env.FRONTEND_URL, // Variável para a URL do Vercel
     ...(!IS_PRODUCTION ? ['http://localhost:3000'] : []),
-];
+].filter(Boolean) as string[]; // Remove undefined values
 
 app.use(cors({
     origin: allowedOrigins,

@@ -73,7 +73,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
         tx = rpc.assembleTransaction(tx, simulatedTx) as any;
         tx.sign(oracleKeypair);
 
-        let submitRes = await server.submitTransaction(tx);
+        let submitRes = await server.sendTransaction(tx);
 
         if (submitRes.status === 'ERROR') {
             console.error(`[Funding] ❌ Error submitting transaction:`, submitRes);
