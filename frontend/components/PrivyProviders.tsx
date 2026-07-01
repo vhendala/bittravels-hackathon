@@ -6,6 +6,12 @@ import { ReactNode } from 'react';
 export default function PrivyProviders({ children }: { children: ReactNode }) {
   const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID || '';
 
+  // Sem App ID configurado (ex: rodando localmente só para a landing page),
+  // o Privy SDK lança erro ao inicializar — então pulamos o provider inteiro.
+  if (!appId) {
+    return <>{children}</>;
+  }
+
   return (
     <PrivyProvider
       appId={appId}

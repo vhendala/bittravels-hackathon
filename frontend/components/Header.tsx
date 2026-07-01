@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { Plane, MessageCircle, LogIn, LogOut } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -8,7 +9,7 @@ import { SUPPORTED_LANGUAGES, WHATSAPP_NUMBER } from '@/config/constants'
 import { usePrivy } from '@privy-io/react-auth'
 
 export default function Header() {
-  const { language, setLanguage } = useLanguage()
+  const { language, setLanguage, t } = useLanguage()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { ready, authenticated, login, logout, user } = usePrivy()
 
@@ -34,6 +35,13 @@ export default function Header() {
 
           {/* Desktop: idiomas + suporte + login */}
           <div className="hidden md:flex items-center gap-3">
+            <Link
+              href="/b2b"
+              className="text-white/80 hover:text-white text-sm font-semibold transition-colors mr-1"
+            >
+              {t('nav.forBusiness')}
+            </Link>
+
             <div className="flex items-center space-x-1 rounded-lg p-1 bg-white/10">
               {SUPPORTED_LANGUAGES.map((lang) => (
                 <button
@@ -111,6 +119,14 @@ export default function Header() {
             className="md:hidden pb-4 border-t border-white/20 mt-2 pt-4"
           >
             <div className="flex items-center gap-3 flex-wrap">
+              <Link
+                href="/b2b"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center bg-white/10 text-white px-4 py-2 rounded-lg font-semibold text-sm"
+              >
+                {t('nav.forBusiness')}
+              </Link>
+
               <div className="flex items-center space-x-1 rounded-lg p-1 bg-white/10">
                 {SUPPORTED_LANGUAGES.map((lang) => (
                   <button
